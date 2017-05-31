@@ -13,10 +13,6 @@ passw = app.config['ADMIN_PASS']
 rdf_finder = etree.XPath('rdf:Description[@rdf:about=$uri]',
 				namespaces={'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'})
 
-label_finder = etree.XPath('rdf:Description[@rdf:about=$uri]/rdfs:label/text()',
-				namespaces={'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-							'rdfs': 'http://www.w3.org/2000/01/rdf-schema#'})
-
 @app.route('/')
 def index():
 	query = '''
@@ -83,14 +79,10 @@ def venue_details(rabid):
 	uri = 'http://vivo.brown.edu/individual/' + rabid
 	query = '''
 	CONSTRUCT {{ <{0}> ?p1 ?o . 
-	             ?s ?p2 <{0}> . 
-	             ?p1 <http://www.w3.org/2000/01/rdf-schema#label> ?label1 .
-	             ?p2 <http://www.w3.org/2000/01/rdf-schema#label> ?label2 .}}
+	             ?s ?p2 <{0}> . }}
 	WHERE {{
 	<{0}> ?p1 ?o .
 	?s ?p2 <{0}> .
-	OPTIONAL {{ ?p1 <http://www.w3.org/2000/01/rdf-schema#label> ?label1 .}}
-	OPTIONAL {{ ?p2 <http://www.w3.org/2000/01/rdf-schema#label> ?label2 .}}
 	}}
 	'''.format(uri)
 	headers = {'Accept': 'application/rdf+xml'}
@@ -98,12 +90,16 @@ def venue_details(rabid):
 	resp = requests.post(query_url, data=data, headers=headers)
 	tree = etree.fromstring(resp.text.encode('utf-8'))
 	sbj = rdf_finder(tree, uri=uri)[0]
-	out = defaultdict(list)
+	arrows_out = defaultdict(list)
 	for pred in sbj:
-		obj = pred.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource', pred.text)
-		label = label_finder(tree, uri=pred.tag.translate(None, '{}'))
-		if label:
-			out[label[0]].append(obj)
-		else:
-			out[pred.tag].append(obj)
-	return jsonify(out)
+		obj = pred.get(
+			'{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource', pred.text)
+		arrows_out[pred.tag.translate(None, '{}')].append(obj)
+	arrows_in = defaultdict(list)
+	others = [ desc for desc in tree
+		if desc.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about') != uri]
+	for o in others:
+		o_uri = o.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about')
+		for e in o:
+			arrows_in[o_uri.translate(None, '{}')].append(e.tag.translate(None, '{}'))
+	return jsonify({'in': arrows_in, 'out': arrows_out})
