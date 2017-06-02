@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vocab.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vocab.shell.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vocab.search.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vocab.details.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vocab.edit.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='lib/jquery/jquery-3.1.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/jquery-ui-1.12.1/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('static', filename='lib/taffydb/taffy.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/vocab.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.data.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.model.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.shell.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.search.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.details.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vocab.edit.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+<h3>Statistics</h3>
+<h4><a href="{{ url_for('dept_dashboard') }}">Departments</a></h4>
+<h4>Terms</h4>
+<ul>
+<li><a href="{{ url_for('terms_dashboard', term_group='withand' ) }}">Terms with "and"</a></li>
+<li><a href="{{ url_for('terms_dashboard', term_group='within' ) }}">Terms with "in"</a></li>
+<li><a href="{{ url_for('terms_dashboard', term_group='nonalpha' ) }}">Terms with non-alpha chars</a></li>
+<li><a href="{{ url_for('terms_dashboard', term_group='titlecase' ) }}">Uppercased terms</a>
+<li><a href="{{ url_for('terms_dashboard', term_group='manywords' ) }}">4 or more word units</a></li>
+<li><a href="{{ url_for('terms_dashboard', term_group='toolong' ) }}">Longer than 40 chars</a></li>
+</div>
+<div class="vocab"></div>
+<script>
+	$(function () { vocab.initModule( $('.vocab'), {{ config|tojson }} ); });
+</script>
+{% endblock %}

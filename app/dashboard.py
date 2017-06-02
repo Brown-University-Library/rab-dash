@@ -72,7 +72,7 @@ def venues():
 	venue_data = pd.DataFrame(data, columns=['uri', 'label'])
 	venue_data['rabid'] = venue_data['uri'].apply( lambda x: x[33:] )
 	out = venue_data.sort_values('label').to_records('dict')
-	return render_template('venues.html', data=out)
+	return render_template('explore.html', data=out)
 
 @app.route('/venues/details/<rabid>')
 def venue_details(rabid):
@@ -99,7 +99,10 @@ def venue_details(rabid):
 	others = [ desc for desc in tree
 		if desc.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about') != uri]
 	for o in others:
-		o_uri = o.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about')
-		for e in o:
-			arrows_in[o_uri.translate(None, '{}')].append(e.tag.translate(None, '{}'))
-	return jsonify({'in': arrows_in, 'out': arrows_out})
+		o_sbj = o.get(
+			'{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about').translate(None, '{}')
+		for pred in o:
+			arrows_in[pred.tag.translate(None, '{}')].append(o_sbj)
+	data_in = [ { 'predicate': key, 'subjects': val } for key, val in arrows_in.items() ]
+	data_out = [ { 'predicate': key, 'objects': val } for key, val in arrows_out.items() ]
+	return jsonify({'in': data_in, 'out': data_out})
