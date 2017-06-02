@@ -14,6 +14,9 @@
 		</ul>
 	</div>
 	<div style="float:right; width:50%" class="details">
+		<h2>Properties</h2>
+		<div class='properties'>
+		</div>
 		<h2>Arrows In</h2>
 		<div class='arrows-in'>
 		</div>
@@ -36,15 +39,29 @@
 		var showDetails = function(data) {
 			$('.arrows-in').empty();
 			$('.arrows-out').empty();
+			$('.properties').empty();
 			// var jdata = JSON.parse(data);
 			var data_in = data['in'];
 			var data_out = data['out'];
+			var data_props = data['properties'];
+
+			$.each(data_props, function (i, row) {
+				var hdr = $('<h3/>').text(row['predicate']);
+				var lst = $('<ul/>');
+				$.each(row['value'], function(i, val) {
+					var li_val = $('<li/>').text(val);
+					lst.append(li_val);
+				});
+				$('.properties').append(hdr).append(lst);
+			});
 
 			$.each(data_in, function (i, row) {
 				var hdr = $('<h3/>').text(row['predicate']);
 				var lst = $('<ul/>');
 				$.each(row['subjects'], function(i, sbj) {
-					var li_sbj = $('<li/>').text(sbj);
+					var li_sbj = $('<li/>', {	'class': 'arrow',
+												'data-rabid': sbj.substring(33) })
+						.text(sbj);
 					lst.append(li_sbj);
 				});
 				$('.arrows-in').append(hdr).append(lst);
@@ -54,10 +71,23 @@
 				var hdr = $('<h3/>').text(row['predicate']);
 				var lst = $('<ul/>');
 				$.each(row['objects'], function(i, obj) {
-					var li_obj = $('<li/>').text(obj);
+					var li_obj = $('<li/>', {	'class': 'arrow',
+												'data-rabid': obj.substring(33) })
+						.text(obj);
 					lst.append(li_obj);
 				});
 				$('.arrows-out').append(hdr).append(lst);
+			});
+
+			$('.arrow').click( function() {
+				var rabid = $(this).attr('data-rabid');
+				$.ajax({
+					// dataType: "json",
+					url: 'http://localhost:5000/venues/details/' + rabid,
+					success: function( data ) {
+						showDetails( data );
+					}
+				});
 			});
 		};
 	</script>

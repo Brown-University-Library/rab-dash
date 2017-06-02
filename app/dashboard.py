@@ -91,10 +91,13 @@ def venue_details(rabid):
 	tree = etree.fromstring(resp.text.encode('utf-8'))
 	sbj = rdf_finder(tree, uri=uri)[0]
 	arrows_out = defaultdict(list)
+	simple_props = defaultdict(list)
 	for pred in sbj:
-		obj = pred.get(
-			'{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource', pred.text)
-		arrows_out[pred.tag.translate(None, '{}')].append(obj)
+		obj = pred.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource')
+		if obj:
+			arrows_out[pred.tag.translate(None, '{}')].append(obj)
+		else:
+			simple_props[pred.tag.translate(None, '{}')].append(pred.text)
 	arrows_in = defaultdict(list)
 	others = [ desc for desc in tree
 		if desc.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about') != uri]
@@ -105,4 +108,5 @@ def venue_details(rabid):
 			arrows_in[pred.tag.translate(None, '{}')].append(o_sbj)
 	data_in = [ { 'predicate': key, 'subjects': val } for key, val in arrows_in.items() ]
 	data_out = [ { 'predicate': key, 'objects': val } for key, val in arrows_out.items() ]
-	return jsonify({'in': data_in, 'out': data_out})
+	data_props = [ { 'predicate': key, 'value': val } for key, val in simple_props.items() ]
+	return jsonify({'in': data_in, 'out': data_out, 'properties': data_props })
