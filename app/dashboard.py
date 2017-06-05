@@ -110,3 +110,32 @@ def venue_details(rabid):
 	data_out = [ { 'predicate': key, 'objects': val } for key, val in arrows_out.items() ]
 	data_props = [ { 'predicate': key, 'value': val } for key, val in simple_props.items() ]
 	return jsonify({'in': data_in, 'out': data_out, 'properties': data_props })
+
+@app.route('/selector/')
+def selector_list():
+	type_param = request.args.get('type')
+	if  type_param == 'organizations':
+		type_uri = 'http://xmlns.com/foaf/0.1/Organization'
+	elif type_param == 'venues':
+		type_uri = 'http://vivo.brown.edu/ontology/citation#Venue'
+	elif type_param == 'concepts':
+		type_uri = 'http://www.w3.org/2004/02/skos/core#Concept'
+	else:
+		raise
+	query = '''
+	CONSTRUCT {{ ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . }}
+	WHERE {{
+	?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <{0}> .
+	?s <http://www.w3.org/2000/01/rdf-schema#label> ?label .
+	}}
+	'''.format(type_uri)
+	headers = {'Accept': 'application/rdf+xml'}
+	data = { 'email': email, 'password': passw, 'query': query }
+	resp = requests.post(query_url, data=data, headers=headers)
+	root = etree.fromstring(resp.text.encode('utf-8'))
+	data = [ ( desc.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about'),
+				desc[0].text ) for desc in root ]
+	venue_data = pd.DataFrame(data, columns=['uri', 'label'])
+	venue_data['rabid'] = venue_data['uri'].apply( lambda x: x[33:] )
+	out = venue_data.sort_values('label').to_json(orient='records')
+	return out

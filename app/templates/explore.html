@@ -7,10 +7,15 @@
 </head>
 <body>
 	<div style="float:left; width:45%">
-		<ul>
-			{% for row in data %}
-				<li data-rabid="{{ row.rabid }}">{{ row.label }}</li>
-			{% endfor %}
+		<form id="filter-selector-list">
+			<select id="filter-type">
+				<option value="organizations">Organizations</option>
+				<option value="venues">Venues</option>
+				<option value="concepts">Research Areas</option>
+			</select>
+			<input type="submit" value="X" />
+		</form>
+		<ul id="selector-list" style="overflow:hidden; overflow-y:scroll; height: 100vh">
 		</ul>
 	</div>
 	<div style="float:right; width:50%" class="details">
@@ -25,16 +30,46 @@
 		</div>
 	</div>
 	<script>
-		$('li').click( function() {
-			var rabid = $(this).attr('data-rabid');
+		$('#filter-selector-list').submit( function(e) {
+			e.preventDefault();
+
+			var type_param = $(this).find('#filter-type option:selected')
+								.attr('value');
+
 			$.ajax({
-				// dataType: "json",
-				url: 'http://localhost:5000/venues/details/' + rabid,
+				url: 'http://localhost:5000/selector',
+				data: { 'type': type_param },
 				success: function( data ) {
-					showDetails( data );
+					showSelectList( data );
 				}
 			});
+
 		});
+
+		var showSelectList = function(data) {
+			var slc_list = $("#selector-list");
+			slc_list.empty();
+
+			var jdata = JSON.parse(data);
+			$.each(jdata, function(i, row) {
+				var li = $('<li/>', { 'class': 'arrow',
+									'data-rabid': row['rabid']})
+							.text(row['label']);
+				slc_list.append(li);
+			});
+
+			$('.arrow').click( function() {
+				var rabid = $(this).attr('data-rabid');
+				$.ajax({
+					// dataType: "json",
+					url: 'http://localhost:5000/venues/details/' + rabid,
+					success: function( data ) {
+						showDetails( data );
+					}
+				});
+			});
+		};
+
 
 		var showDetails = function(data) {
 			$('.arrows-in').empty();
