@@ -6,7 +6,7 @@
   crossorigin="anonymous"></script>
 </head>
 <body>
-	<div style="float:left; width:45%">
+	<div style="float:left; width:35%">
 		<form id="filter-selector-list">
 			<select id="filter-type">
 				<option value="organizations">Organizations</option>
@@ -15,18 +15,21 @@
 			</select>
 			<input type="submit" value="X" />
 		</form>
-		<ul id="selector-list" style="overflow:hidden; overflow-y:scroll; height: 100vh">
+		<ul id="selector-list" style="overflow:hidden; overflow-y:scroll; height: 95vh">
 		</ul>
 	</div>
-	<div style="float:right; width:50%" class="details">
-		<h2>Properties</h2>
-		<div class='properties'>
+	<div style="float:right; width:60%" class="details">
+		<h2 id="uri-display"></h2>
+		<div>
+			<table class='properties' style="border-collapse: collapse; border-bottom: 1px solid black"></table>
 		</div>
-		<h2>Arrows In</h2>
-		<div class='arrows-in'>
+		<div>
+			<h2>Pointers</h2>
+			<div class='arrows-out'></div>
 		</div>
-		<h2>Arrows Out</h2>
-		<div class='arrows-out'>
+		<div>
+			<h2>Targets</h2>
+			<div class='arrows-in'></div>
 		</div>
 	</div>
 	<script>
@@ -52,17 +55,17 @@
 
 			var jdata = JSON.parse(data);
 			$.each(jdata, function(i, row) {
-				var li = $('<li/>', { 'class': 'arrow',
+				var li = $('<li/>', { 'class': 'selector-arrow',
 									'data-rabid': row['rabid']})
 							.text(row['label']);
 				slc_list.append(li);
 			});
 
-			$('.arrow').click( function() {
+			$('.selector-arrow').click( function() {
 				var rabid = $(this).attr('data-rabid');
 				$.ajax({
 					// dataType: "json",
-					url: 'http://localhost:5000/venues/details/' + rabid,
+					url: 'http://localhost:5000/explorer/' + rabid,
 					success: function( data ) {
 						showDetails( data );
 					}
@@ -72,22 +75,29 @@
 
 
 		var showDetails = function(data) {
+			$('#uri-display').empty()
 			$('.arrows-in').empty();
 			$('.arrows-out').empty();
 			$('.properties').empty();
 			// var jdata = JSON.parse(data);
-			var data_in = data['in'];
-			var data_out = data['out'];
+			var data_in = data['targets'];
+			var data_out = data['pointers'];
 			var data_props = data['properties'];
 
+			$('#uri-display').text(data['uri']);
+
 			$.each(data_props, function (i, row) {
-				var hdr = $('<h3/>').text(row['predicate']);
+				var tr = $('<tr/>').css('vertical-align','baseline');
+				var td_prd = $('<td/>').text(row['predicate']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
 				var lst = $('<ul/>');
 				$.each(row['value'], function(i, val) {
 					var li_val = $('<li/>').text(val);
 					lst.append(li_val);
 				});
-				$('.properties').append(hdr).append(lst);
+				td_data.append(lst);
+				tr.append(td_prd).append(td_data);
+				$('.properties').append(tr);
 			});
 
 			$.each(data_in, function (i, row) {
@@ -118,7 +128,7 @@
 				var rabid = $(this).attr('data-rabid');
 				$.ajax({
 					// dataType: "json",
-					url: 'http://localhost:5000/venues/details/' + rabid,
+					url: 'http://localhost:5000/explorer/' + rabid,
 					success: function( data ) {
 						showDetails( data );
 					}
