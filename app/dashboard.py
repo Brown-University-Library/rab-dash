@@ -2,16 +2,32 @@ from flask import request, render_template, jsonify, make_response, url_for
 from app import app
 
 import requests
+import uuid
 from collections import defaultdict
 from lxml import etree
 import pandas as pd
 
 query_url = app.config['RAB_QUERY_API']
+update_url = app.config['RAB_UPDATE_API']
 email = app.config['ADMIN_EMAIL']
 passw = app.config['ADMIN_PASS']
 
 rdf_finder = etree.XPath('rdf:Description[@rdf:about=$uri]',
 				namespaces={'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'})
+
+def create_uri():
+	new_uri = 'http://vivo.brown.edu/individual/ctrl-{0}'.format(uuid.uuid4().hex)
+
+	header = {'Accept': 'application/sparql-results+xml'}
+	query = "ASK {{<{0}> ?p ?o}}"
+	data = {'email': email, 'password': passw, 'query': query.format(new_uri)}
+	resp = requests.post(query_url, data=data, headers=header)
+	tree = etree.fromstring(resp.text.encode('utf-8'))
+	existing = tree.find('{http://www.w3.org/2005/sparql-results#}boolean').text
+	if existing == 'false':
+		return new_uri
+	else:
+		return None
 
 @app.route('/')
 def index():
@@ -139,3 +155,29 @@ def selector_list():
 	venue_data['rabid'] = venue_data['uri'].apply( lambda x: x[33:] )
 	out = venue_data.sort_values('label').to_json(orient='records')
 	return out
+
+@app.route('/control/')
+def create_control():
+	data = request.get_json()
+	control_label = data['label']
+	new_uri = create_uri()
+	graph = 'http://vivo.brown.edu/data/control'
+	type_uri = "http://vivo.brown.edu/ontology/control#Control"
+	insert_template = u"INSERTDATA{{GRAPH<{0}>{{{1}}}}}"
+	type_line = "<{0}><http://www.w3.org/1999/02/22-rdf-syntax-ns#type><{1}> ."
+	label_line = "<{0}><http://www.w3.org/2000/01/rdf-schema#label> \"{1}\" ."
+	triples = type_line.format(new_uri,type_uri) + label_line.format(new_uri,control_label)
+	update_body = insert_template.format(graph, triples)
+	payload = {'email': email, 'password': passw, 'update': update_body}
+	header = {	'Content-Type': 'application/x-www-form-urlencoded',
+				'Connection': 'close' }
+	resp = requests.post(update_url, data=payload, headers=header)
+	if resp.status_code == 200:
+		return jsonify({ 'uri': new_uri, 'label': control_label })
+	else:
+		return jsonify({})
+
+
+@app.route('/usefor/')
+def use_for():
+	data = request.get_json()

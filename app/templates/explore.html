@@ -20,6 +20,7 @@
 	</div>
 	<div style="float:right; width:60%" class="details">
 		<h2 id="uri-display"></h2>
+		<button id="edit-button" data-rabid>Edit</button>
 		<div>
 			<table class='properties' style="border-collapse: collapse; border-bottom: 1px solid black"></table>
 		</div>
@@ -85,6 +86,7 @@
 			var data_props = data['properties'];
 
 			$('#uri-display').text(data['uri']);
+			$('#edit-button').attr('data-rabid', data['rabid']);
 
 			$.each(data_props, function (i, row) {
 				var tr = $('<tr/>').css('vertical-align','baseline');
