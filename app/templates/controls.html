@@ -1,0 +1,152 @@
+<html>
+<head>
+<script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+</head>
+<body>
+	<div style="float:left; width:35%">
+		<form id="filter-selector-list">
+			<select id="filter-type">
+				<option value="organizations">Organizations</option>
+				<option value="venues">Venues</option>
+				<option value="concepts">Research Areas</option>
+			</select>
+			<input type="submit" value="X" />
+		</form>
+	</div>
+	<div style="float:right; width:60%" class="details">
+		<form id="create-control">
+			<input id="create-control-label" type="text" />
+			<input type="submit" value="->">
+		</form>
+		<form id="list-controls">
+			<input type="submit" value="List Controls" /> 
+		</form>
+		<ul id="control-list">
+		</ul>
+	</div>
+	<script>
+		$('#create-control').submit( function(e) {
+			e.preventDefault();
+
+			var create_label = $(this).find('#create-control-label').val();
+
+			$.ajax({
+				url: 'http://localhost:5000/control/create/',
+				method: 'POST',
+				dataType: 'json',
+				data: { 'label': create_label },
+				success: function( data ) {
+					console.log( data );
+				}
+			});
+
+		});
+
+		$('#list-controls').submit( function(e) {
+			e.preventDefault();
+
+			var type_param = 'controls';
+
+			$.ajax({
+				url: 'http://localhost:5000/selector',
+				data: { 'type': type_param },
+				success: function( data ) {
+					showSelectList( data );
+				}
+			});
+
+		});
+
+		var showSelectList = function(data) {
+			var slc_list = $("#control-list");
+			slc_list.empty();
+
+			var jdata = JSON.parse(data);
+			$.each(jdata, function(i, row) {
+				var li = $('<li/>', { 'class': 'selector-arrow',
+									'data-rabid': row['rabid']})
+							.text(row['label']);
+				slc_list.append(li);
+			});
+
+			$('.selector-arrow').click( function() {
+				var rabid = $(this).attr('data-rabid');
+				$.ajax({
+					// dataType: "json",
+					url: 'http://localhost:5000/explorer/' + rabid,
+					success: function( data ) {
+						showDetails( data );
+					}
+				});
+			});
+		};
+
+
+		var showDetails = function(data) {
+			$('#uri-display').empty()
+			$('.arrows-in').empty();
+			$('.arrows-out').empty();
+			$('.properties').empty();
+			// var jdata = JSON.parse(data);
+			var data_in = data['targets'];
+			var data_out = data['pointers'];
+			var data_props = data['properties'];
+
+			$('#uri-display').text(data['uri']);
+			$('#edit-button').attr('data-rabid', data['rabid']);
+
+			$.each(data_props, function (i, row) {
+				var tr = $('<tr/>').css('vertical-align','baseline');
+				var td_prd = $('<td/>').text(row['predicate']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var lst = $('<ul/>');
+				$.each(row['value'], function(i, val) {
+					var li_val = $('<li/>').text(val);
+					lst.append(li_val);
+				});
+				td_data.append(lst);
+				tr.append(td_prd).append(td_data);
+				$('.properties').append(tr);
+			});
+
+			$.each(data_in, function (i, row) {
+				var hdr = $('<h3/>').text(row['predicate']);
+				var lst = $('<ul/>');
+				$.each(row['subjects'], function(i, sbj) {
+					var li_sbj = $('<li/>', {	'class': 'arrow',
+												'data-rabid': sbj.substring(33) })
+						.text(sbj);
+					lst.append(li_sbj);
+				});
+				$('.arrows-in').append(hdr).append(lst);
+			});
+
+			$.each(data_out, function (i, row) {
+				var hdr = $('<h3/>').text(row['predicate']);
+				var lst = $('<ul/>');
+				$.each(row['objects'], function(i, obj) {
+					var li_obj = $('<li/>', {	'class': 'arrow',
+												'data-rabid': obj.substring(33) })
+						.text(obj);
+					lst.append(li_obj);
+				});
+				$('.arrows-out').append(hdr).append(lst);
+			});
+
+			$('.arrow').click( function() {
+				var rabid = $(this).attr('data-rabid');
+				$.ajax({
+					// dataType: "json",
+					url: 'http://localhost:5000/explorer/' + rabid,
+					success: function( data ) {
+						showDetails( data );
+					}
+				});
+			});
+		};
+	</script>
+</body>
+</html>

@@ -136,6 +136,8 @@ def selector_list():
 		type_uri = 'http://vivo.brown.edu/ontology/citation#Venue'
 	elif type_param == 'concepts':
 		type_uri = 'http://www.w3.org/2004/02/skos/core#Concept'
+	elif type_param == 'controls':
+		type_uri = 'http://vivo.brown.edu/ontology/control#Control'
 	else:
 		raise
 	query = '''
@@ -156,10 +158,9 @@ def selector_list():
 	out = venue_data.sort_values('label').to_json(orient='records')
 	return out
 
-@app.route('/control/')
+@app.route('/control/create/', methods=['POST'])
 def create_control():
-	data = request.get_json()
-	control_label = data['label']
+	control_label = request.form['label']
 	new_uri = create_uri()
 	graph = 'http://vivo.brown.edu/data/control'
 	type_uri = "http://vivo.brown.edu/ontology/control#Control"
@@ -177,6 +178,9 @@ def create_control():
 	else:
 		return jsonify({})
 
+@app.route('/controls/')
+def manage_controls():
+	return render_template('controls.html')
 
 @app.route('/usefor/')
 def use_for():
