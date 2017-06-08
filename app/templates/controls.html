@@ -1,31 +1,67 @@
 <html>
 <head>
+<style type="text/css">
+	#flex-container {
+		display: flex;
+	}
+
+	.list {
+		flex: 1 1;
+	}
+
+	.details {
+		flex: 2 2;
+	}
+
+	.selected {
+		background: #F39814; color: white;
+	}
+</style>
 <script
   src="https://code.jquery.com/jquery-3.2.1.min.js"
   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
   crossorigin="anonymous"></script>
 </head>
 <body>
-	<div style="float:left; width:35%">
-		<form id="filter-selector-list">
-			<select id="filter-type">
-				<option value="organizations">Organizations</option>
-				<option value="venues">Venues</option>
-				<option value="concepts">Research Areas</option>
-			</select>
-			<input type="submit" value="X" />
-		</form>
-	</div>
-	<div style="float:right; width:60%" class="details">
-		<form id="create-control">
-			<input id="create-control-label" type="text" />
-			<input type="submit" value="->">
-		</form>
-		<form id="list-controls">
-			<input type="submit" value="List Controls" /> 
-		</form>
-		<ul id="control-list">
-		</ul>
+	<div id="flex-container">
+		<div class="list">
+			<form id="filter-selector-list">
+				<select id="filter-type">
+					<option value="organizations">Organizations</option>
+					<option value="venues">Venues</option>
+					<option value="concepts">Research Areas</option>
+				</select>
+				<input type="submit" value="X" />
+			</form>
+			<ul id="selector-list" style="overflow:hidden; overflow-y:scroll; height: 95vh">
+			</ul>
+		</div>
+		<div class="list">
+			<form id="list-controls">
+				<input type="submit" value="List Controls" /> 
+			</form>
+			<ul id="control-list">
+			</ul>
+		</div>
+		<div class="details">
+			<form id="create-control">
+				<input id="create-control-label" type="text" />
+				<input type="submit" value="->">
+			</form>
+			<h2 id="uri-display"></h2>
+			<div>
+				<table class='properties' style="border-collapse: collapse; border-bottom: 1px solid black"></table>
+			</div>
+			<div>
+				<form id="add-as-control">
+					<input type="submit" value="Add as control" />
+				</form>
+			</div>
+			<div>
+				<h2>Use for</h2>
+				<ul id="alts"></ul>
+			</div>
+		</div>
 	</div>
 	<script>
 		$('#create-control').submit( function(e) {
@@ -45,10 +81,35 @@
 
 		});
 
-		$('#list-controls').submit( function(e) {
+		$('#add-as-control').submit( function(e) {
 			e.preventDefault();
 
-			var type_param = 'controls';
+			var selected = $('#selector-list .selected');
+
+			if (selected.length !== 1) {
+				console.log('Wrong selects!');
+				return;
+			}
+
+			var control_label = selected.text();
+
+			$.ajax({
+				url: 'http://localhost:5000/control/create/',
+				method: 'POST',
+				dataType: 'json',
+				data: { 'label': control_label },
+				success: function( data ) {
+					console.log( data );
+				}
+			});
+
+		});
+
+		$('#filter-selector-list').submit( function(e) {
+			e.preventDefault();
+
+			var type_param = $(this).find('#filter-type option:selected')
+								.attr('value');
 
 			$.ajax({
 				url: 'http://localhost:5000/selector',
@@ -60,19 +121,34 @@
 
 		});
 
-		var showSelectList = function(data) {
+		$('#list-controls').submit( function(e) {
+			e.preventDefault();
+
+			var type_param = 'controls';
+
+			$.ajax({
+				url: 'http://localhost:5000/selector',
+				data: { 'type': type_param },
+				success: function( data ) {
+					showControlList( data );
+				}
+			});
+
+		});
+
+		var showControlList = function(data) {
 			var slc_list = $("#control-list");
 			slc_list.empty();
 
 			var jdata = JSON.parse(data);
 			$.each(jdata, function(i, row) {
-				var li = $('<li/>', { 'class': 'selector-arrow',
+				var li = $('<li/>', { 'class': 'select-controls',
 									'data-rabid': row['rabid']})
 							.text(row['label']);
 				slc_list.append(li);
 			});
 
-			$('.selector-arrow').click( function() {
+			$('.select-controls').click( function() {
 				var rabid = $(this).attr('data-rabid');
 				$.ajax({
 					// dataType: "json",
@@ -84,14 +160,28 @@
 			});
 		};
 
+		var showSelectList = function(data) {
+			var slc_list = $("#selector-list");
+			slc_list.empty();
+
+			var jdata = JSON.parse(data);
+			$.each(jdata, function(i, row) {
+				var li = $('<li/>', { 'class': 'selector-arrow',
+									'data-rabid': row['rabid']})
+							.text(row['label']);
+				slc_list.append(li);
+			});
+
+			$('.selector-arrow').click( function() {
+				$(this).toggleClass('selected');
+			});
+		};
 
 		var showDetails = function(data) {
 			$('#uri-display').empty()
-			$('.arrows-in').empty();
-			$('.arrows-out').empty();
+			$('#alts').empty();
 			$('.properties').empty();
 			// var jdata = JSON.parse(data);
-			var data_in = data['targets'];
 			var data_out = data['pointers'];
 			var data_props = data['properties'];
 
@@ -112,39 +202,16 @@
 				$('.properties').append(tr);
 			});
 
-			$.each(data_in, function (i, row) {
-				var hdr = $('<h3/>').text(row['predicate']);
-				var lst = $('<ul/>');
-				$.each(row['subjects'], function(i, sbj) {
-					var li_sbj = $('<li/>', {	'class': 'arrow',
-												'data-rabid': sbj.substring(33) })
-						.text(sbj);
-					lst.append(li_sbj);
-				});
-				$('.arrows-in').append(hdr).append(lst);
-			});
-
 			$.each(data_out, function (i, row) {
-				var hdr = $('<h3/>').text(row['predicate']);
-				var lst = $('<ul/>');
-				$.each(row['objects'], function(i, obj) {
-					var li_obj = $('<li/>', {	'class': 'arrow',
-												'data-rabid': obj.substring(33) })
-						.text(obj);
-					lst.append(li_obj);
-				});
-				$('.arrows-out').append(hdr).append(lst);
-			});
-
-			$('.arrow').click( function() {
-				var rabid = $(this).attr('data-rabid');
-				$.ajax({
-					// dataType: "json",
-					url: 'http://localhost:5000/explorer/' + rabid,
-					success: function( data ) {
-						showDetails( data );
-					}
-				});
+				if (row['predicate'] === 'http://vivo.brown.edu/ontology/control#useFor') {
+					var alt_labels = $('#alts');
+					$.each(row['objects'], function(i, obj) {
+						var li_obj = $('<li/>', {	'class': 'arrow',
+													'data-rabid': obj.substring(33) })
+							.text(obj);
+						alt_labels.append(li_obj);
+					});					
+				}
 			});
 		};
 	</script>
