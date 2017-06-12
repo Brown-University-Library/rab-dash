@@ -15,6 +15,8 @@ passw = app.config['ADMIN_PASS']
 rdf_finder = etree.XPath('rdf:Description[@rdf:about=$uri]',
 				namespaces={'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'})
 
+gatherer = etree
+
 def create_uri():
 	new_uri = 'http://vivo.brown.edu/individual/ctrl-{0}'.format(uuid.uuid4().hex)
 
@@ -40,35 +42,9 @@ def index():
 	resp = requests.post(query_url, data=data, headers=headers)
 	return '<p>{0}</p>'.format(resp.text.encode('utf-8'))
 
-@app.route('/editor/<kls>/<frmt>')
-def editor(kls, frmt):
-	if frmt == 'json':
-		accept = 'application/json'
-	elif frmt == 'xml':
-		accept = 'application/rdf+xml'
-	else:
-		raise
-	if kls == 'organization':
-		rdfType = 'http://xmlns.com/foaf/0.1/Organization'
-	elif kls == 'venue':
-		rdfType = 'http://vivo.brown.edu/ontology/citation#Venue'
-	else:
-		raise
-	query = '''
-		CONSTRUCT {{ ?s1 ?p ?o .}}
-		WHERE {{
-			?s1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <{0}> .
-			?s1 ?p ?o .
-			?s2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <{0}> .
-			?s1 <http://www.w3.org/2000/01/rdf-schema#label> ?label .
-			?s2 <http://www.w3.org/2000/01/rdf-schema#label> ?label .
-			FILTER (?s1 != ?s2)
-		}}
-	'''.format(rdfType)
-	headers = {'Accept': accept}
-	data = { 'email': email, 'password': passw, 'query': query }
-	resp = requests.post(query_url, data=data, headers=headers)
-	return '<p>{0}</p>'.format(resp.text.encode('utf-8'))
+@app.route('/entities/')
+def entity_manager():
+	return render_template('entity_manager.html')
 
 @app.route('/explore/')
 def explorer():
@@ -125,7 +101,8 @@ def explore_details(rabid):
 	return jsonify({'targets': data_targets,
 					'pointers': data_pointers,
 					'properties': data_properties,
-					'uri': uri })
+					'uri': uri,
+					'rabid': rabid })
 
 @app.route('/selector/')
 def selector_list():
@@ -185,3 +162,70 @@ def manage_controls():
 @app.route('/usefor/')
 def use_for():
 	data = request.get_json()
+
+@app.route('/merge/', methods=['POST'])
+def merge():
+	sbj_query = '''
+	CONSTRUCT {{ <{0}> ?p1 ?o . }}
+	WHERE {{
+		GRAPH <http://vitro.mannlib.cornell.edu/default/vitro-kb-2>
+		{{ <{0}> ?p1 ?o .}}
+	}}
+	'''
+	obj_query = '''
+	CONSTRUCT {{ ?s ?p2 <{0}> .}}
+	WHERE {{
+		GRAPH <http://vitro.mannlib.cornell.edu/default/vitro-kb-2>
+		{{	?s ?p2 <{0}> . }}
+	}}
+	'''
+	headers = {'Accept': 'application/rdf+xml'}
+	q_data = { 'email': email, 'password': passw }
+
+	data = request.get_json()
+	merge_into = data['merge_into']
+	merge_uri = 'http://vivo.brown.edu/individual/' + merge_into
+
+	to_merge = data['to_merge']
+	for rabid in to_merge:
+		uri = 'http://vivo.brown.edu/individual/' + rabid
+		q_data['query'] = sbj_query.format(uri)
+		resp = requests.post(query_url, data=q_data, headers=headers)
+		tree = etree.fromstring(resp.text.encode('utf-8'))
+		sbj_data = rdf_finder(tree, uri=uri)
+		if len(sbj_data) < 1:
+			sbj_results = []
+		else:
+			sbj_results = sbj_data[0]
+		to_insert = set()
+		to_delete = set()
+		for pred in sbj_results:
+			obj = pred.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource')
+			if obj:
+				to_insert.add((merge_uri, pred.tag.translate(None, '{}'), obj))
+				to_delete.add((uri, pred.tag.translate(None, '{}'), obj))
+			else:
+				if pred.tag == '{http://www.w3.org/2000/01/rdf-schema#}label':
+					to_delete.add(
+						(uri, pred.tag.translate(None, '{}'), pred.text))
+				else:
+					to_insert.add(
+						(merge_uri, pred.tag.translate(None, '{}'), pred.text))
+					to_delete.add(
+						(uri, pred.tag.translate(None, '{}'), pred.text))
+
+		q_data['query'] = obj_query.format(uri)
+		resp = requests.post(query_url, data=q_data, headers=headers)
+		tree = etree.fromstring(resp.text.encode('utf-8'))
+		for desc in tree:
+			other = desc.attrib['{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about']
+			pred = desc[0].tag
+			to_insert.add(
+				(other.translate(None, '{}'), pred.translate(None, '{}'), merge_uri) )
+			to_delete.add(
+				(other.translate(None, '{}'), pred.translate(None, '{}'), uri) )
+		print "INSERTING for: ", uri
+		print to_insert
+		print "DELETING for: ", uri
+		print to_delete
+	return jsonify({'we_will_merge': to_merge, 'into_this_uri': merge_into})

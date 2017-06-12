@@ -1,0 +1,204 @@
+<html>
+<head>
+<style type="text/css">
+	#flex-container {
+		display: flex;
+	}
+
+	.list {
+		flex: 1 1;
+	}
+
+	.details {
+		flex: 2 2;
+	}
+
+	.selected {
+		background: #F39814; color: white;
+	}
+</style>
+<script
+  src="https://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+</head>
+<body>
+	<div id="flex-container">
+		<div class="list">
+			<form id="filter-selector-list">
+				<select id="filter-type">
+					<option value="organizations">Organizations</option>
+					<option value="venues">Venues</option>
+					<option value="concepts">Research Areas</option>
+				</select>
+				<input type="submit" value="X" />
+			</form>
+			<ul id="selector-list" style="overflow:hidden; overflow-y:scroll; height: 95vh">
+			</ul>
+		</div>
+		<div class="list">
+			<form id="list-controls">
+				<input type="submit" value="List Controls" /> 
+			</form>
+			<ul id="control-list">
+			</ul>
+		</div>
+		<div class="details" id="inspector">
+			<h2 id="uri-display"></h2>
+			<div>
+				<table class='properties' style="border-collapse: collapse; border-bottom: 1px solid black"></table>
+			</div>
+			<div>
+				<h2>Pointers</h2>
+				<div class='arrows-out'></div>
+			</div>
+			<div>
+				<h2>Targets</h2>
+				<div class='arrows-in'></div>
+			</div>
+			<div>
+				<form id="merge-into">
+					<input type="submit" value="Merge" />
+				</form>
+			</div>
+		</div>
+	</div>
+	<script>
+
+		$('#merge-into').submit( function(e) {
+			e.preventDefault();
+
+			var merge_into = $('#inspector').attr('data-rabid');
+			var selected = $('#selector-list .selected');
+
+			var uris_to_merge = [];
+			selected.each( function(i, slct) {
+				var li = $( slct );
+				uris_to_merge.push( li.attr("data-rabid") );
+			});
+
+			$.ajax({
+				url: 'http://localhost:5000/merge/',
+				method: 'POST',
+				dataType: 'json',
+				contentType: "application/json",
+				data: JSON.stringify({ 'to_merge': uris_to_merge, 'merge_into': merge_into }),
+				success: function( data ) {
+					console.log( data );
+				}
+			});
+
+		});
+
+		$('#filter-selector-list').submit( function(e) {
+			e.preventDefault();
+
+			var type_param = $(this).find('#filter-type option:selected')
+								.attr('value');
+
+			$.ajax({
+				url: 'http://localhost:5000/selector',
+				data: { 'type': type_param },
+				success: function( data ) {
+					showSelectList( data );
+				}
+			});
+
+		});
+
+		$('#list-controls').submit( function(e) {
+			e.preventDefault();
+
+			var type_param = 'controls';
+
+			$.ajax({
+				url: 'http://localhost:5000/selector',
+				data: { 'type': type_param },
+				success: function( data ) {
+					showControlList( data );
+				}
+			});
+
+		});
+
+		var showControlList = function(data) {
+			var slc_list = $("#control-list");
+			slc_list.empty();
+
+			var jdata = JSON.parse(data);
+			$.each(jdata, function(i, row) {
+				var li = $('<li/>', { 'class': 'select-controls',
+									'data-rabid': row['rabid']})
+							.text(row['label']);
+				slc_list.append(li);
+			});
+
+			$('.select-controls').click( function() {
+				var rabid = $(this).attr('data-rabid');
+				$.ajax({
+					// dataType: "json",
+					url: 'http://localhost:5000/explorer/' + rabid,
+					success: function( data ) {
+						showDetails( data );
+					}
+				});
+			});
+		};
+
+		var showSelectList = function(data) {
+			var slc_list = $("#selector-list");
+			slc_list.empty();
+
+			var jdata = JSON.parse(data);
+			$.each(jdata, function(i, row) {
+				var li = $('<li/>', { 'class': 'selector-arrow',
+									'data-rabid': row['rabid']})
+							.text(row['label']);
+				slc_list.append(li);
+			});
+
+			$('.selector-arrow').click( function() {
+				$(this).toggleClass('selected');
+			});
+		};
+
+		var showDetails = function(data) {
+			$('#uri-display').empty()
+			$('#alts').empty();
+			$('.properties').empty();
+			// var jdata = JSON.parse(data);
+			var data_out = data['pointers'];
+			var data_props = data['properties'];
+
+			$('#uri-display').text(data['uri']);
+			$('#inspector').attr('data-rabid', data['rabid']);
+
+			$.each(data_props, function (i, row) {
+				var tr = $('<tr/>').css('vertical-align','baseline');
+				var td_prd = $('<td/>').text(row['predicate']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var lst = $('<ul/>');
+				$.each(row['value'], function(i, val) {
+					var li_val = $('<li/>').text(val);
+					lst.append(li_val);
+				});
+				td_data.append(lst);
+				tr.append(td_prd).append(td_data);
+				$('.properties').append(tr);
+			});
+
+			$.each(data_out, function (i, row) {
+				if (row['predicate'] === 'http://vivo.brown.edu/ontology/control#useFor') {
+					var alt_labels = $('#alts');
+					$.each(row['objects'], function(i, obj) {
+						var li_obj = $('<li/>', {	'class': 'arrow',
+													'data-rabid': obj.substring(33) })
+							.text(obj);
+						alt_labels.append(li_obj);
+					});					
+				}
+			});
+		};
+	</script>
+</body>
+</html>
