@@ -9,6 +9,29 @@
 		flex: 1 1;
 	}
 
+	.selector-arrow {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+	}
+
+	.item-label {
+		flex: 9 9;
+		padding: 2px;
+	}
+
+	.editing-box {
+		flex: 1 1;
+	}
+
+	.enable-editing {
+		margin: 2px;
+		height: 25px;
+		width: 25px;
+		z-index: 1;
+
+	}
+
 	.details {
 		flex: 2 2;
 	}
@@ -16,6 +39,11 @@
 	.selected {
 		background: #F39814; color: white;
 	}
+
+	.editing {
+		background: #ADD8E6; color: white;;
+	}
+
 </style>
 <script
   src="https://code.jquery.com/jquery-3.2.1.min.js"
@@ -36,13 +64,13 @@
 			<ul id="selector-list" style="overflow:hidden; overflow-y:scroll; height: 95vh">
 			</ul>
 		</div>
-		<div class="list">
+<!-- 		<div class="list">
 			<form id="list-controls">
 				<input type="submit" value="List Controls" /> 
 			</form>
 			<ul id="control-list">
 			</ul>
-		</div>
+		</div> -->
 		<div class="details" id="inspector">
 			<h2 id="uri-display"></h2>
 			<div>
@@ -64,6 +92,8 @@
 		</div>
 	</div>
 	<script>
+
+		var is_editing = false;
 
 		$('#merge-into').submit( function(e) {
 			e.preventDefault();
@@ -152,13 +182,56 @@
 			var jdata = JSON.parse(data);
 			$.each(jdata, function(i, row) {
 				var li = $('<li/>', { 'class': 'selector-arrow',
-									'data-rabid': row['rabid']})
-							.text(row['label']);
+									'data-rabid': row['rabid']});
+				var label = $('<div/>', {'class': 'item-label'})
+								.text(row['label']);
+				var edit_box = $('<div/>', {'class': 'editing-box'});
+				var edit_btn = $('<button/>', {'class': 'enable-editing',
+												'html': '&plus;'});
+				edit_box.append(edit_btn);
+				li.append(label).append(edit_box);
 				slc_list.append(li);
 			});
 
 			$('.selector-arrow').click( function() {
-				$(this).toggleClass('selected');
+				if (is_editing === false) {
+					if ( $(this).hasClass('selected') ) {
+						$('.selector-arrow').removeClass('selected');
+					}
+					else {
+						$('.selector-arrow').removeClass('selected');
+						$(this).addClass('selected');
+						var rabid = $(this).attr('data-rabid');
+						$.ajax({
+							// dataType: "json",
+							url: 'http://localhost:5000/explorer/' + rabid,
+							success: function( data ) {
+								showDetails( data );
+							}
+						});
+					}
+				}
+				else {
+					$(this).toggleClass('selected');
+				}
+			});
+
+			$('.enable-editing').click( function() {
+				is_editing = true;
+
+				$('.selector-arrow').removeClass('selected editing');
+
+				$li = $(this).closest('li');
+				$li.removeClass('selected').addClass('editing');
+
+				var rabid = $li.attr('data-rabid');
+				$.ajax({
+					// dataType: "json",
+					url: 'http://localhost:5000/explorer/' + rabid,
+					success: function( data ) {
+						showDetails( data );
+					}
+				});
 			});
 		};
 
