@@ -86,18 +86,12 @@ def explore_details(rabid):
 
 	data = { 'email': email, 'password': passw, 'query': obj_query }
 	resp = requests.post(query_url, data=data, headers=headers)
-	tree = etree.fromstring(resp.text.encode('utf-8'))
-	obj_data = rdf_finder(tree, uri=uri)
-	if len(obj_data) < 1:
-		obj_results = []
-	else:
-		obj_results = obj_data[0]
 	targets = defaultdict(list)
-	for o in obj_results:
-		o_sbj = o.get(
-			'{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about').translate(None, '{}')
-		for pred in o:
-			targets[pred.tag.translate(None, '{}')].append(o_sbj)
+	tree = etree.fromstring(resp.text.encode('utf-8'))
+	for desc in tree:
+		other = desc.attrib['{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about']
+		pred = desc[0].tag
+		targets[pred.translate(None, '{}')].append(other.translate(None, '{}'))
 
 	data_targets = [ { 'predicate': key, 'subjects': val } for key, val in targets.items() ]
 	data_pointers = [ { 'predicate': key, 'objects': val } for key, val in pointers.items() ]

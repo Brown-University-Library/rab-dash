@@ -268,15 +268,15 @@
 			});
 
 			$.each(data_out, function (i, row) {
-				if (row['predicate'] === 'http://vivo.brown.edu/ontology/control#useFor') {
-					var alt_labels = $('#alts');
-					$.each(row['objects'], function(i, obj) {
-						var li_obj = $('<li/>', {	'class': 'arrow',
-													'data-rabid': obj.substring(33) })
-							.text(obj);
-						alt_labels.append(li_obj);
-					});					
-				}
+				var hdr = $('<h3/>').text(row['predicate']);
+				var lst = $('<ul/>');
+				$.each(row['objects'], function(i, obj) {
+					var li_obj = $('<li/>', {	'class': 'arrow',
+												'data-rabid': obj.substring(33) })
+						.text(obj);
+					lst.append(li_obj);
+				});
+				$('.arrows-out').append(hdr).append(lst);
 			});
 		};
 	</script>
