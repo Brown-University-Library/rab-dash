@@ -81,6 +81,7 @@
 				<form id="merge-into">
 					<input type="submit" value="Merge" />
 				</form>
+				<table id="merge-candidates" style="border-collapse: collapse; border-bottom: 1px solid black"></table>
 			</div>
 		</div>
 	</div>
@@ -205,7 +206,22 @@
 					}
 				}
 				else {
-					$(this).toggleClass('selected');
+					if ( $(this).hasClass('selected') ) {
+						$(this).removeClass('selected');
+						removeMergeCandidate($(this).attr('data-rabid'));
+					}
+					else {
+						$(this).addClass('selected');
+						var rabid = $(this).attr('data-rabid');
+						$.ajax({
+							// dataType: "json",
+							url: 'http://localhost:5000/explorer/' + rabid,
+							success: function( data ) {
+								addMergeCandidate( data );
+							}
+						});
+					}
+					
 				}
 			});
 
@@ -278,6 +294,35 @@
 				});
 				$('.arrows-out').append(hdr).append(lst);
 			});
+		};
+
+		var addMergeCandidate = function( data ) {
+			var tbl = $('#merge-candidates');
+			var pointers = data['pointers'];
+			var targets = data['targets'];
+			var uri = data['uri'];
+
+			var tr = $('<tr/>', {'data-rabid': data['rabid']}).css('vertical-align','baseline');
+			var td_uri = $('<td/>').text(uri).css({'border-top':'1px solid black', 'padding-top': '8px'});
+			var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
+			var lst = $('<ul/>');
+			$.each(targets, function (i, row) {
+				var li = $('<li/>');				
+				var prd = $('<span/>').text(row['predicate']);	
+				var count = $('<span/>').text(row['subjects'].length);
+				li.append(prd).append(count);
+				lst.append(li);
+			});
+			$.each(pointers, function (i, row) {
+				var li = $('<li/>');				
+				var prd = $('<span/>').text(row['predicate']);	
+				var count = $('<span/>').text(row['objects'].length);
+				li.append(prd).append(count);
+				lst.append(li);
+			});
+			td_data.append(lst);
+			tr.append(td_uri).append(td_data);
+			tbl.append(tr);
 		};
 	</script>
 </body>
