@@ -1,3 +1,4 @@
 *.pyc
 config/development.py
 app/static/lib/*
+logs/*/*.txt

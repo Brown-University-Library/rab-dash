@@ -64,13 +64,6 @@
 			<ul id="selector-list" style="overflow:hidden; overflow-y:scroll; height: 95vh">
 			</ul>
 		</div>
-<!-- 		<div class="list">
-			<form id="list-controls">
-				<input type="submit" value="List Controls" /> 
-			</form>
-			<ul id="control-list">
-			</ul>
-		</div> -->
 		<div class="details" id="inspector">
 			<h2 id="uri-display"></h2>
 			<div>
@@ -237,10 +230,12 @@
 
 		var showDetails = function(data) {
 			$('#uri-display').empty()
-			$('#alts').empty();
+			$('.arrows-in').empty();
+			$('.arrows-out').empty();
 			$('.properties').empty();
 			// var jdata = JSON.parse(data);
 			var data_out = data['pointers'];
+			var data_in = data['targets'];
 			var data_props = data['properties'];
 
 			$('#uri-display').text(data['uri']);
@@ -258,6 +253,18 @@
 				td_data.append(lst);
 				tr.append(td_prd).append(td_data);
 				$('.properties').append(tr);
+			});
+
+			$.each(data_in, function (i, row) {
+				var hdr = $('<h3/>').text(row['predicate']);
+				var lst = $('<ul/>');
+				$.each(row['subjects'], function(i, sbj) {
+					var li_sbj = $('<li/>', {	'class': 'arrow',
+												'data-rabid': sbj.substring(33) })
+						.text(sbj);
+					lst.append(li_sbj);
+				});
+				$('.arrows-in').append(hdr).append(lst);
 			});
 
 			$.each(data_out, function (i, row) {

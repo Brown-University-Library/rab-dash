@@ -1,6 +1,7 @@
 from flask import request, render_template, jsonify, make_response, url_for
 from app import app
 
+import os
 import requests
 import uuid
 from collections import defaultdict
@@ -11,6 +12,9 @@ query_url = app.config['RAB_QUERY_API']
 update_url = app.config['RAB_UPDATE_API']
 email = app.config['ADMIN_EMAIL']
 passw = app.config['ADMIN_PASS']
+
+log_dir = app.config['LOG_DIR']
+merge_dir = os.path.join(log_dir, 'merge')
 
 rdf_finder = etree.XPath('rdf:Description[@rdf:about=$uri]',
 				namespaces={'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'})
@@ -202,18 +206,34 @@ def merge():
 		for pred in sbj_results:
 			obj = pred.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource')
 			if obj:
-				to_insert.add((merge_uri, pred.tag.translate(None, '{}'), obj))
-				to_delete.add((uri, pred.tag.translate(None, '{}'), obj))
+				to_insert.add(
+					(	'<{0}>'.format(merge_uri),
+						'<{0}>'.format(pred.tag.translate(None, '{}')),
+						'<{0}>'.format(obj) )
+				)
+				to_delete.add(
+					(	'<{0}>'.format(uri),
+						'<{0}>'.format(pred.tag.translate(None, '{}')),
+						'<{0}>'.format(obj) )
+				)
 			else:
 				if pred.tag == '{http://www.w3.org/2000/01/rdf-schema#}label':
 					to_delete.add(
-						(uri, pred.tag.translate(None, '{}'), pred.text))
+						(	'<{0}>'.format(uri),
+							'<{0}>'.format(pred.tag.translate(None, '{}')),
+							'"{0}"'.format(pred.text))
+						)
 				else:
 					to_insert.add(
-						(merge_uri, pred.tag.translate(None, '{}'), pred.text))
+						(	'<{0}>'.format(merge_uri),
+							'<{0}>'.format(pred.tag.translate(None, '{}')),
+							'"{0}"'.format(pred.text))
+						)
 					to_delete.add(
-						(uri, pred.tag.translate(None, '{}'), pred.text))
-
+						(	'<{0}>'.format(uri),
+							'<{0}>'.format(pred.tag.translate(None, '{}')),
+							'"{0}"'.format(pred.text))
+						)
 		q_data['query'] = obj_query.format(uri)
 		resp = requests.post(query_url, data=q_data, headers=headers)
 		tree = etree.fromstring(resp.text.encode('utf-8'))
@@ -221,11 +241,27 @@ def merge():
 			other = desc.attrib['{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about']
 			pred = desc[0].tag
 			to_insert.add(
-				(other.translate(None, '{}'), pred.translate(None, '{}'), merge_uri) )
+				(	'<{0}>'.format(other.translate(None, '{}')),
+					'<{0}>'.format(pred.translate(None, '{}')),
+					'<{0}>'.format(merge_uri))
+				)
 			to_delete.add(
-				(other.translate(None, '{}'), pred.translate(None, '{}'), uri) )
-		print "INSERTING for: ", uri
-		print to_insert
-		print "DELETING for: ", uri
-		print to_delete
+				(	'<{0}>'.format(other.translate(None, '{}')),
+					'<{0}>'.format(pred.translate(None, '{}')),
+					'<{0}>'.format(uri))
+				)
+		
+		with open(os.path.join(merge_dir, rabid + '.txt'), 'w') as f:
+			insert_data = ""
+			delete_data = ""
+			graph = "http://vitro.mannlib.cornell.edu/default/vitro-kb-2"
+			for i in to_insert:
+				insert_data += "{0} {1} {2} .\n".format(i[0],i[1],i[2])
+			for d in to_delete:
+				delete_data += "{0} {1} {2} .\n".format(d[0],d[1],d[2])
+			insert_template = u"INSERTDATA{{GRAPH<{0}>{{{1}}}}}"
+			delete_template = u"DELETEDATA{{GRAPH<{0}>{{{1}}}}}"
+			f.write(delete_template.format(graph, delete_data))
+			f.write(insert_template.format(graph, insert_data))
+
 	return jsonify({'we_will_merge': to_merge, 'into_this_uri': merge_into})
