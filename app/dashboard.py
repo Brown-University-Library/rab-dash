@@ -211,22 +211,33 @@ def merge():
 						'<{0}>'.format(obj) )
 				)
 			else:
+				dt = pred.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}datatype')
 				if pred.tag == '{http://www.w3.org/2000/01/rdf-schema#}label':
+					if dt:
+						text = '"{0}"^^<{1}>'.format(pred.text, dt)
+					else:
+						text = '"{0}"'.format(pred.text)
 					to_delete.add(
-						(	'<{0}>'.format(uri),
+							('<{0}>'.format(uri),
 							'<{0}>'.format(pred.tag.translate(None, '{}')),
-							'"{0}"'.format(pred.text))
+							text)
 						)
 				else:
+					if dt:
+						del_text = '"{0}"^^<{1}>'.format(pred.text, dt)
+						add_text = del_text
+					else:
+						add_text = '"{0}"^^<http://www.w3.org/2001/XMLSchema#string>'.format(pred.text)
+						del_text = '"{0}"'.format(pred.text)
 					to_insert.add(
-						(	'<{0}>'.format(merge_uri),
+							( '<{0}>'.format(merge_uri),
 							'<{0}>'.format(pred.tag.translate(None, '{}')),
-							'"{0}"'.format(pred.text))
+							add_text )
 						)
 					to_delete.add(
-						(	'<{0}>'.format(uri),
+							('<{0}>'.format(uri),
 							'<{0}>'.format(pred.tag.translate(None, '{}')),
-							'"{0}"'.format(pred.text))
+							del_text )
 						)
 		q_data['query'] = obj_query.format(uri)
 		resp = requests.post(query_url, data=q_data, headers=headers)
@@ -244,18 +255,30 @@ def merge():
 					'<{0}>'.format(pred.translate(None, '{}')),
 					'<{0}>'.format(uri))
 				)
-		
+
+		insert_data = ""
+		delete_data = ""
+		graph = "http://vitro.mannlib.cornell.edu/default/vitro-kb-2"
+		for i in to_insert:
+			insert_data += "{0} {1} {2} .\n".format(i[0],i[1],i[2])
+		for d in to_delete:
+			delete_data += "{0} {1} {2} .\n".format(d[0],d[1],d[2])
+		insert_template = u"INSERTDATA{{GRAPH<{0}>{{{1}}}}}"
+		delete_template = u"DELETEDATA{{GRAPH<{0}>{{{1}}}}}"
+
+		update_body = ""
+		update_body += delete_template.format(graph, delete_data)
+		update_body += ";"
+		update_body += insert_template.format(graph, insert_data)
+
 		with open(os.path.join(merge_dir, rabid + '.txt'), 'w') as f:
-			insert_data = ""
-			delete_data = ""
-			graph = "http://vitro.mannlib.cornell.edu/default/vitro-kb-2"
-			for i in to_insert:
-				insert_data += "{0} {1} {2} .\n".format(i[0],i[1],i[2])
-			for d in to_delete:
-				delete_data += "{0} {1} {2} .\n".format(d[0],d[1],d[2])
-			insert_template = u"INSERTDATA{{GRAPH<{0}>{{{1}}}}}"
-			delete_template = u"DELETEDATA{{GRAPH<{0}>{{{1}}}}}"
-			f.write(delete_template.format(graph, delete_data))
-			f.write(insert_template.format(graph, insert_data))
+			f.write(update_body)
+
+		payload = {'email': email, 'password': passw, 'update': update_body}
+		header = {	'Content-Type': 'application/x-www-form-urlencoded',
+				'Connection': 'close' }
+		resp = requests.post(update_url, data=payload, headers=header)
+		print resp.status_code
+		print resp.content
 
 	return jsonify({'we_will_merge': to_merge, 'into_this_uri': merge_into})

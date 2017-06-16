@@ -187,15 +187,17 @@
 				slc_list.append(li);
 			});
 
-			$('.selector-arrow').click( function() {
+			$('.item-label').click( function() {
+				$li = $(this).closest('li');
+
 				if (is_editing === false) {
-					if ( $(this).hasClass('selected') ) {
+					if ( $li.hasClass('selected') ) {
 						$('.selector-arrow').removeClass('selected');
 					}
 					else {
 						$('.selector-arrow').removeClass('selected');
-						$(this).addClass('selected');
-						var rabid = $(this).attr('data-rabid');
+						$li.addClass('selected');
+						var rabid = $li.attr('data-rabid');
 						$.ajax({
 							// dataType: "json",
 							url: 'http://localhost:5000/explorer/' + rabid,
@@ -206,13 +208,13 @@
 					}
 				}
 				else {
-					if ( $(this).hasClass('selected') ) {
-						$(this).removeClass('selected');
-						removeMergeCandidate($(this).attr('data-rabid'));
+					if ( $li.hasClass('selected') ) {
+						$li.removeClass('selected');
+						removeMergeCandidate($li.attr('data-rabid'));
 					}
 					else {
-						$(this).addClass('selected');
-						var rabid = $(this).attr('data-rabid');
+						$li.addClass('selected');
+						var rabid = $li.attr('data-rabid');
 						$.ajax({
 							// dataType: "json",
 							url: 'http://localhost:5000/explorer/' + rabid,
@@ -225,7 +227,9 @@
 				}
 			});
 
-			$('.enable-editing').click( function() {
+			$('.enable-editing').click( function(e) {
+				e.preventDefault();
+
 				is_editing = true;
 
 				$('.selector-arrow').removeClass('selected editing');
@@ -323,6 +327,11 @@
 			td_data.append(lst);
 			tr.append(td_uri).append(td_data);
 			tbl.append(tr);
+		};
+
+		var removeMergeCandidate = function( rabid ) {
+			var tbl = $('#merge-candidates');
+			tbl.find(`tr[data-rabid='${rabid}']`).remove();
 		};
 	</script>
 </body>
