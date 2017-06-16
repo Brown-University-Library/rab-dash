@@ -77,12 +77,20 @@ def explore_details(rabid):
 		sbj_results = sbj_data[0]
 	pointers = defaultdict(list)
 	simple_data = defaultdict(list)
+	label = None
 	for pred in sbj_results:
 		obj = pred.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource')
 		if obj:
 			pointers[pred.tag.translate(None, '{}')].append(obj)
 		else:
-			simple_data[pred.tag.translate(None, '{}')].append(pred.text)
+			if pred.tag == '{http://www.w3.org/2000/01/rdf-schema#}label':
+				label = pred.text
+			dt = pred.get('{http://www.w3.org/1999/02/22-rdf-syntax-ns#}datatype')
+			if dt:
+				text = '"{0}"^^<{1}>'.format(pred.text, dt)
+			else:
+				text = '"{0}"'.format(pred.text)
+			simple_data[pred.tag.translate(None, '{}')].append(text)
 
 	data = { 'email': email, 'password': passw, 'query': obj_query }
 	resp = requests.post(query_url, data=data, headers=headers)
@@ -100,7 +108,8 @@ def explore_details(rabid):
 					'pointers': data_pointers,
 					'properties': data_properties,
 					'uri': uri,
-					'rabid': rabid })
+					'rabid': rabid,
+					'label': label })
 
 @app.route('/selector/')
 def selector_list():

@@ -65,17 +65,14 @@
 			</ul>
 		</div>
 		<div class="details" id="inspector">
-			<h2 id="uri-display"></h2>
+			<h2 id="label-display"></h2>
+			<h3 id="uri-display"></h3>
 			<div>
 				<table class='properties' style="border-collapse: collapse; border-bottom: 1px solid black"></table>
 			</div>
 			<div>
 				<h2>Pointers</h2>
-				<div class='arrows-out'></div>
-			</div>
-			<div>
-				<h2>Targets</h2>
-				<div class='arrows-in'></div>
+				<table class='pointers'></table>
 			</div>
 			<div>
 				<form id="merge-into">
@@ -242,22 +239,60 @@
 					// dataType: "json",
 					url: 'http://localhost:5000/explorer/' + rabid,
 					success: function( data ) {
-						showDetails( data );
+						editDetails( data );
 					}
 				});
 			});
 		};
 
-		var showDetails = function(data) {
+		var editDetails = function ( data ) {
 			$('#uri-display').empty()
-			$('.arrows-in').empty();
-			$('.arrows-out').empty();
+			$('#label-display').empty()
+			$('.pointers').empty();
+			$('.properties').empty();
+
+			$('#label-display').text(data['label']);
+			$('#uri-display').text(data['uri']);
+			$('#inspector').attr('data-rabid', data['rabid']);
+			var tbl = $('.properties');
+			var pointers = data['pointers'];
+			var targets = data['targets'];
+			var uri = data['uri'];
+
+			var tr = $('<tr/>', {'data-rabid': data['rabid']}).css('vertical-align','baseline');
+			var td_uri = $('<td/>').text(uri).css({'border-top':'1px solid black', 'padding-top': '8px'});
+			var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
+			var lst = $('<ul/>');
+			$.each(targets, function (i, row) {
+				var li = $('<li/>');				
+				var prd = $('<span/>').text(row['predicate']);	
+				var count = $('<span/>').text(row['subjects'].length);
+				li.append(prd).append(count);
+				lst.append(li);
+			});
+			$.each(pointers, function (i, row) {
+				var li = $('<li/>');				
+				var prd = $('<span/>').text(row['predicate']);	
+				var count = $('<span/>').text(row['objects'].length);
+				li.append(prd).append(count);
+				lst.append(li);
+			});
+			td_data.append(lst);
+			tr.append(td_uri).append(td_data);
+			tbl.append(tr);
+		};
+
+		var showDetails = function(data) {
+			$('#uri-display').empty();
+			$('#label-display').empty()
+			$('.pointers').empty();
 			$('.properties').empty();
 			// var jdata = JSON.parse(data);
 			var data_out = data['pointers'];
 			var data_in = data['targets'];
 			var data_props = data['properties'];
 
+			$('#label-display').text(data['label']);
 			$('#uri-display').text(data['uri']);
 			$('#inspector').attr('data-rabid', data['rabid']);
 
@@ -276,27 +311,32 @@
 			});
 
 			$.each(data_in, function (i, row) {
-				var hdr = $('<h3/>').text(row['predicate']);
-				var lst = $('<ul/>');
-				$.each(row['subjects'], function(i, sbj) {
-					var li_sbj = $('<li/>', {	'class': 'arrow',
-												'data-rabid': sbj.substring(33) })
-						.text(sbj);
-					lst.append(li_sbj);
-				});
-				$('.arrows-in').append(hdr).append(lst);
+				var tr = $('<tr/>').css('vertical-align','baseline');
+				var td_sbj = $('<td/>').text(row['subjects'].length).css({'border-top':'1px solid black', 'padding-top': '8px', 'width' : '10%'});
+				var td_prd = $('<td/>').text(row['predicate']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				// var td_obj = $('<td/>').text(data['uri']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var td_obj = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px', 'width' : '10%'});
+				// var lst = $('<ul/>').css('display', 'none');
+				// $.each(row['subjects'], function(i, sbj) {
+				// 	var li_sbj = $('<li/>', {	'class': 'arrow',
+				// 								'data-rabid': sbj.substring(33) })
+				// 		.text(sbj);
+				// 	lst.append(li_sbj);
+				// });
+				tr.append(td_sbj).append(td_prd).append(td_obj);
+				$('.pointers').append(tr);
 			});
 
 			$.each(data_out, function (i, row) {
-				var hdr = $('<h3/>').text(row['predicate']);
-				var lst = $('<ul/>');
-				$.each(row['objects'], function(i, obj) {
-					var li_obj = $('<li/>', {	'class': 'arrow',
-												'data-rabid': obj.substring(33) })
-						.text(obj);
-					lst.append(li_obj);
-				});
-				$('.arrows-out').append(hdr).append(lst);
+				var tr = $('<tr/>').css('vertical-align','baseline');
+				// var td_sbj = $('<td/>').text(data['uri']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var td_sbj = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px', 'width' : '10%'});
+				var td_prd = $('<td/>').text(row['predicate']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var td_obj = $('<td/>').text(row['objects'].length).css({'border-top':'1px solid black', 'padding-top': '8px', 'width' : '10%'});
+				var lst = $('<ul/>').css('display', 'none');
+
+				tr.append(td_sbj).append(td_prd).append(td_obj);
+				$('.pointers').append(tr);
 			});
 		};
 
