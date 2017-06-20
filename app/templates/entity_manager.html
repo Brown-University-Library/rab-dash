@@ -5,6 +5,10 @@
 		display: flex;
 	}
 
+	#reset-view {
+		visibility: hidden;
+	}
+
 	.list {
 		flex: 1 1;
 	}
@@ -68,6 +72,14 @@
 		flex: 1 1;
 	}
 
+	summary {
+		display: block;
+	}
+
+	summary::-webkit-details-marker {
+  		display: none;
+	}
+
 </style>
 <script
   src="https://code.jquery.com/jquery-3.2.1.min.js"
@@ -89,6 +101,7 @@
 			</ul>
 		</div>
 		<div class="details" id="inspector">
+			<button id="reset-view">X</button>
 			<h2 id="label-display"></h2>
 			<h3 id="uri-display"></h3>
 			<div>
@@ -133,6 +146,12 @@
 				}
 			});
 
+		});
+
+		$('#reset-view').click( function (e) {
+			e.preventDefault()
+
+			resetView();
 		});
 
 		$('#filter-selector-list').submit( function(e) {
@@ -233,6 +252,9 @@
 						$li.removeClass('selected');
 						removeMergeCandidate($li.attr('data-rabid'));
 					}
+					else if ( $li.hasClass('editing') ) {
+							return true;
+					}
 					else {
 						$li.addClass('selected');
 						var rabid = $li.attr('data-rabid');
@@ -278,6 +300,7 @@
 			$('#label-display').text(data['label']);
 			$('#uri-display').text(data['uri']);
 			$('#inspector').attr('data-rabid', data['rabid']);
+			$('#reset-view').css('visibility', 'visible');
 			var tbl = $('.properties');
 			var pointers = data['pointers'];
 			var targets = data['targets'];
@@ -319,6 +342,7 @@
 			$('#label-display').text(data['label']);
 			$('#uri-display').text(data['uri']);
 			$('#inspector').attr('data-rabid', data['rabid']);
+			$('#reset-view').css('visibility', 'visible');
 
 			$.each(data_props, function (i, row) {
 				var tr = $('<tr/>').css('vertical-align','baseline');
@@ -439,6 +463,19 @@
 		var removeMergeCandidate = function( rabid ) {
 			var tbl = $('#merge-candidates');
 			tbl.find(`tr[data-rabid='${rabid}']`).remove();
+		};
+
+		var resetView = function() {
+			is_editing = false;
+
+			$('#uri-display').empty();
+			$('#label-display').empty();
+			$('.pointers').empty();
+			$('.properties').empty();
+			$('#inspector').attr('data-rabid', '');
+			$('#merge-candidates').empty();
+			$('.selector-arrow').removeClass('selected editing');
+			$('#reset-view').css('visibility', 'hidden');
 		};
 	</script>
 </body>
