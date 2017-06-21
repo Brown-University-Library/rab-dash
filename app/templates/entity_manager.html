@@ -48,11 +48,17 @@
 		background: #ADD8E6; color: white;;
 	}
 
+	.data-table {
+		border-collapse: collapse;
+		border-bottom: 1px solid black;
+		margin-bottom: 10px;
+	}
+
 	.triple-table {
 		border-collapse: collapse;
 		table-layout: fixed;
 		white-space: normal;
-		width: 90%;
+		width: 95%;
 		margin: 10px auto;
 	}
 
@@ -66,26 +72,24 @@
 	}
 
 	.triple-table td {
-		padding-top: 8px;
-		border-right: 1px solid black;
-		padding-left: 5px;
-		padding-right: 5px;
+		padding: 5px 5px;
+		border-left: 1px solid black;
 		overflow: auto;
 	}
 
-	.triple-table td:last-of-type {
+	.triple-table td:first-of-type {
 		border: none;
 	}
 
 	.triple-table .del-triple {
 		width: 10%;
+		border: none;
 	}
 
 	.triple-header {
 		display: flex;
 		border-top: 1px solid black;
-		/*border-bottom: 1px solid black;*/
-		padding: 5px;
+		padding: 5px 8px;
 	}
 
 	.triple-sbj {
@@ -143,7 +147,7 @@
 			<h2 id="label-display"></h2>
 			<h3 id="uri-display"></h3>
 			<div>
-				<table class='properties' style="border-collapse: collapse; border-bottom: 1px solid black"></table>
+				<table class='properties data-table'></table>
 			</div>
 			<div>
 				<div class='pointers'></div>
