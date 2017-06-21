@@ -48,9 +48,43 @@
 		background: #ADD8E6; color: white;;
 	}
 
+	.triple-table {
+		border-collapse: collapse;
+		table-layout: fixed;
+		white-space: normal;
+		width: 90%;
+		margin: 10px auto;
+	}
+
+	.triple-table tr {
+		vertical-align: baseline;
+		border-bottom: 1px solid black;
+	}
+
+	.triple-table tr:last-of-type {
+		border-bottom: none;
+	}
+
+	.triple-table td {
+		padding-top: 8px;
+		border-right: 1px solid black;
+		padding-left: 5px;
+		padding-right: 5px;
+		overflow: auto;
+	}
+
+	.triple-table td:last-of-type {
+		border: none;
+	}
+
+	.triple-table .del-triple {
+		width: 10%;
+	}
+
 	.triple-header {
 		display: flex;
 		border-top: 1px solid black;
+		/*border-bottom: 1px solid black;*/
 		padding: 5px;
 	}
 
@@ -72,13 +106,17 @@
 		flex: 1 1;
 	}
 
-	summary {
+	#merge-into input {
+		visibility: hidden;
+	}
+
+/*	summary {
 		display: block;
 	}
 
 	summary::-webkit-details-marker {
   		display: none;
-	}
+	}*/
 
 </style>
 <script
@@ -108,7 +146,6 @@
 				<table class='properties' style="border-collapse: collapse; border-bottom: 1px solid black"></table>
 			</div>
 			<div>
-				<h2>Pointers</h2>
 				<div class='pointers'></div>
 			</div>
 			<div>
@@ -301,32 +338,84 @@
 			$('#uri-display').text(data['uri']);
 			$('#inspector').attr('data-rabid', data['rabid']);
 			$('#reset-view').css('visibility', 'visible');
-			var tbl = $('.properties');
-			var pointers = data['pointers'];
-			var targets = data['targets'];
-			var uri = data['uri'];
+			$('#merge-into input').css('visibility', 'visible');
 
-			var tr = $('<tr/>', {'data-rabid': data['rabid']}).css('vertical-align','baseline');
-			var td_uri = $('<td/>').text(uri).css({'border-top':'1px solid black', 'padding-top': '8px'});
-			var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
-			var lst = $('<ul/>');
-			$.each(targets, function (i, row) {
-				var li = $('<li/>');				
-				var prd = $('<span/>').text(row['predicate']);	
-				var count = $('<span/>').text(row['subjects'].length);
-				li.append(prd).append(count);
-				lst.append(li);
+			var data_out = data['pointers'];
+			var data_in = data['targets'];
+			var data_props = data['properties'];
+
+			$.each(data_props, function (i, row) {
+				var tr = $('<tr/>').css('vertical-align','baseline');
+				var td_prd = $('<td/>').text(row['predicate']).css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
+				var lst = $('<ul/>');
+				$.each(row['value'], function(i, val) {
+					var li_val = $('<li/>').text(val);
+					lst.append(li_val);
+				});
+				td_data.append(lst);
+				tr.append(td_prd).append(td_data);
+				$('.properties').append(tr);
 			});
-			$.each(pointers, function (i, row) {
-				var li = $('<li/>');				
-				var prd = $('<span/>').text(row['predicate']);	
-				var count = $('<span/>').text(row['objects'].length);
-				li.append(prd).append(count);
-				lst.append(li);
+
+			$.each(data_in, function (i, row) {
+				var triple_details = $('<details/>');
+
+				var triple_hdr = $('<summary/>', {'class': 'triple-header'});
+				var triple_hdr_sbj = $('<span/>', {'class': 'triple-sbj'})
+					.text(row['subjects'].length);
+				var triple_hdr_prd = $('<span/>', {'class': 'triple-prd'})
+					.text(row['predicate']);
+				var triple_hdr_obj = $('<span/>', {'class': 'triple-obj'});
+
+				triple_hdr.append(triple_hdr_sbj).append(triple_hdr_prd)
+					.append(triple_hdr_obj);
+
+				var triple_table = $('<table/>', {'class': 'triple-table'});
+				$.each(row['subjects'], function(i, sbj) {
+					// , {	'class': 'arrow','data-rabid': sbj.substring(33) }).text(sbj);
+					var tr = $('<tr/>');
+					var td_sbj = $('<td/>').text(sbj);
+					var td_prd = $('<td/>').text(row['predicate']);
+					var td_obj = $('<td/>').text(data['uri']);
+					var del_btn = $('<button/>').text('X');
+					var td_del = $('<td/>', {'class': 'del-triple'}).append(del_btn);
+					tr.append(td_sbj).append(td_prd).append(td_obj).append(td_del);
+					triple_table.append(tr);
+				});
+
+				triple_details.append(triple_hdr).append(triple_table);
+				$('.pointers').append(triple_details);
 			});
-			td_data.append(lst);
-			tr.append(td_uri).append(td_data);
-			tbl.append(tr);
+
+			$.each(data_out, function (i, row) {
+				var triple_details = $('<details/>');
+
+				var triple_hdr = $('<summary/>', {'class': 'triple-header'});
+				var triple_hdr_sbj = $('<span/>', {'class': 'triple-sbj'});
+				var triple_hdr_prd = $('<span/>', {'class': 'triple-prd'})
+					.text(row['predicate']);
+				var triple_hdr_obj = $('<span/>', {'class': 'triple-obj'})
+					.text(row['objects'].length);
+				triple_hdr.append(triple_hdr_sbj).append(triple_hdr_prd)
+					.append(triple_hdr_obj);
+
+				var triple_table = $('<table/>', {'class': 'triple-table'})
+				$.each(row['objects'], function(i, obj) {
+					// , {	'class': 'arrow','data-rabid': sbj.substring(33) }).text(sbj);
+					var tr = $('<tr/>');
+					var td_sbj = $('<td/>').text(data['uri']);
+					var td_prd = $('<td/>').text(row['predicate']);
+					var td_obj = $('<td/>').text(obj);
+					var del_btn = $('<button/>').text('X');
+					var td_del = $('<td/>', {'class': 'del-triple'}).append(del_btn);
+					tr.append(td_sbj).append(td_prd).append(td_obj).append(td_del);
+					triple_table.append(tr);
+				});
+
+				triple_details.append(triple_hdr).append(triple_table);
+				$('.pointers').append(triple_details);
+			});
 		};
 
 		var showDetails = function(data) {
@@ -367,26 +456,18 @@
 				var triple_hdr_prd = $('<span/>', {'class': 'triple-prd'})
 					.text(row['predicate']);
 				var triple_hdr_obj = $('<span/>', {'class': 'triple-obj'});
-				var triple_hdr_expand = $('<button/>', {'class': 'triple-expand'});
-				triple_hdr.append(triple_hdr_sbj).append(triple_hdr_prd)
-					.append(triple_hdr_obj).append(triple_hdr_expand);
 
-				var triple_table = $('<table/>').css({'border-collapse':'collapse', 'border-bottom': '1px solid black'});
+				triple_hdr.append(triple_hdr_sbj).append(triple_hdr_prd)
+					.append(triple_hdr_obj);
+
+				var triple_table = $('<table/>', {'class': 'triple-table'});
 				$.each(row['subjects'], function(i, sbj) {
 					// , {	'class': 'arrow','data-rabid': sbj.substring(33) }).text(sbj);
-					var tr = $('<tr/>').css('vertical-align','baseline');
-					var td_sbj = $('<td/>')
-						.css({'border-top':'1px solid black', 'padding-top': '8px', 'width' : '10%'})
-						.text(sbj);
-					var td_prd = $('<td/>')
-						.css({'border-top':'1px solid black', 'padding-top': '8px'})
-						.text(row['predicate']);
-					var td_obj = $('<td/>')
-						.css({'border-top':'1px solid black', 'padding-top': '8px'})
-						.text(data['uri']);
-					var del_btn = $('<button/>').text('X');
-					var td_del = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'}).append(del_btn);
-					tr.append(td_sbj).append(td_prd).append(td_obj).append(td_del);
+					var tr = $('<tr/>');
+					var td_sbj = $('<td/>').text(sbj);
+					var td_prd = $('<td/>').text(row['predicate']);
+					var td_obj = $('<td/>').text(data['uri']);
+					tr.append(td_sbj).append(td_prd).append(td_obj);
 					triple_table.append(tr);
 				});
 
@@ -403,26 +484,17 @@
 					.text(row['predicate']);
 				var triple_hdr_obj = $('<span/>', {'class': 'triple-obj'})
 					.text(row['objects'].length);
-				var triple_hdr_expand = $('<button/>', {'class': 'triple-expand'});
 				triple_hdr.append(triple_hdr_sbj).append(triple_hdr_prd)
-					.append(triple_hdr_obj).append(triple_hdr_expand);
+					.append(triple_hdr_obj);
 
-				var triple_table = $('<table/>').css({'border-collapse':'collapse', 'border-bottom': '1px solid black'});
+				var triple_table = $('<table/>', {'class': 'triple-table'});
 				$.each(row['objects'], function(i, obj) {
 					// , {	'class': 'arrow','data-rabid': sbj.substring(33) }).text(sbj);
-					var tr = $('<tr/>').css('vertical-align','baseline');
-					var td_sbj = $('<td/>')
-						.css({'border-top':'1px solid black', 'padding-top': '8px', 'width' : '10%'})
-						.text(data['uri']);
-					var td_prd = $('<td/>')
-						.css({'border-top':'1px solid black', 'padding-top': '8px'})
-						.text(row['predicate']);
-					var td_obj = $('<td/>')
-						.css({'border-top':'1px solid black', 'padding-top': '8px'})
-						.text(obj);
-					var del_btn = $('<button/>').text('X');
-					var td_del = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'}).append(del_btn);
-					tr.append(td_sbj).append(td_prd).append(td_obj).append(td_del);
+					var tr = $('<tr/>');
+					var td_sbj = $('<td/>').text(data['uri']);
+					var td_prd = $('<td/>').text(row['predicate']);
+					var td_obj = $('<td/>').text(obj);
+					tr.append(td_sbj).append(td_prd).append(td_obj);
 					triple_table.append(tr);
 				});
 
@@ -476,6 +548,7 @@
 			$('#merge-candidates').empty();
 			$('.selector-arrow').removeClass('selected editing');
 			$('#reset-view').css('visibility', 'hidden');
+			$('#merge-into input').css('visibility', 'hidden');
 		};
 	</script>
 </body>
