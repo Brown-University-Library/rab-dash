@@ -360,9 +360,11 @@
 							'data-predicate': row['predicate'],
 							'data-literal': val['literal']})
 						.text(val['text']);
+					var edit_btn = $('<button/>', {'class': 'triple-edit-literal'})
+						.text('edit');
 					var del_btn = $('<button/>', {'class': 'triple-delete-literal'})
 						.text('X');
-					li_val.append(del_btn);
+					li_val.append(edit_btn).append(del_btn);
 					lst.append(li_val);
 				});
 
@@ -449,6 +451,43 @@
 						console.log( data );
 					}
 				});
+			});
+
+			$('.triple-edit-literal').click( function(e) {
+				e.preventDefault();
+
+				var $li = $(this).closest('li');
+
+				var $form = $('<form/>');
+				var $input = $('<input/>', {'type':'text','class':'triple-edit-literal-input'})
+					.val($li.attr('data-literal'));
+				var $submit = $('<input/>', {'type':'submit'});
+
+				$form.append($input).append($submit);
+				$form.submit( function(e) {
+					e.preventDefault()
+
+					var payload = {'action':'update'};
+					payload['subject'] = $li.attr('data-subject');
+					payload['predicate'] = $li.attr('data-predicate');
+					payload['datatype'] = $li.attr('data-datatype');
+					payload['current'] = $li.attr('data-literal');
+					payload['future'] = $li.find('.triple-edit-literal-input')
+						.val();
+						
+					$.ajax({
+						url: 'http://localhost:5000/triple-edit/',
+						method: 'POST',
+						dataType: 'json',
+						contentType: "application/json",
+						data: JSON.stringify(payload),
+						success: function( data ) {
+							console.log( data );
+						}
+					});
+				});
+
+				$li.empty().append($form);
 			});
 		};
 

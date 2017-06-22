@@ -168,6 +168,7 @@ def triple_edit():
 	graph = 'http://vitro.mannlib.cornell.edu/default/vitro-kb-2'
 	uri_base = 'http://vivo.brown.edu/individual/'
 	delete_template = u"DELETEDATA{{GRAPH<{0}>{{{1}}}}}"
+	insert_template = u"INSERTDATA{{GRAPH<{0}>{{{1}}}}}"
 
 	data = request.get_json()
 	uri = data['subject']
@@ -189,7 +190,28 @@ def triple_edit():
 		triple = '<{0}> <{1}> {2}'.format(uri, pred, prm)
 		update_body = delete_template.format(graph, triple)
 	elif action == 'update':
-		pass
+		current = data['current']
+		future = data['future']
+		pred = data['predicate']
+		dt = data.get('datatype')
+
+		if dt:
+			curr_lit = '\"{0}\"^^<{1}>'.format(current, dt)
+		else:
+			curr_lit = '\"{0}\"'.format(current)
+		curr_triple = '<{0}> <{1}> {2}'.format(uri, pred, curr_lit)
+		
+		if dt:
+			ftr_lit = '\"{0}\"^^<{1}>'.format(future, dt)
+		else:
+			ftr_lit = '\"{0}\"^^<http://www.w3.org/2001/XMLSchema#string>'.format(future)
+		ftr_triple = '<{0}> <{1}> {2}'.format(uri, pred, ftr_lit)
+
+		update_body = ""
+		update_body += delete_template.format(graph, curr_triple)
+		update_body += ";"
+		update_body += insert_template.format(graph, ftr_triple)
+
 	payload = {'email': email, 'password': passw, 'update': update_body}
 	header = {	'Content-Type': 'application/x-www-form-urlencoded',
 				'Connection': 'close' }
