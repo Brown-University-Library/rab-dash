@@ -269,7 +269,7 @@
 			});
 
 			$('.item-label').click( function() {
-				$li = $(this).closest('li');
+				var $li = $(this).closest('li');
 
 				if (is_editing === false) {
 					if ( $li.hasClass('selected') ) {
@@ -354,9 +354,18 @@
 				var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
 				var lst = $('<ul/>');
 				$.each(row['value'], function(i, val) {
-					var li_val = $('<li/>').text(val);
+					var li_val = $('<li/>',
+							{'data-datatype': val['dt'],
+							'data-subject': data['uri'],
+							'data-predicate': row['predicate'],
+							'data-literal': val['literal']})
+						.text(val['text']);
+					var del_btn = $('<button/>', {'class': 'triple-delete-literal'})
+						.text('X');
+					li_val.append(del_btn);
 					lst.append(li_val);
 				});
+
 				td_data.append(lst);
 				tr.append(td_prd).append(td_data);
 				$('.properties').append(tr);
@@ -420,6 +429,27 @@
 				triple_details.append(triple_hdr).append(triple_table);
 				$('.pointers').append(triple_details);
 			});
+
+			$('.triple-delete-literal').click( function(e) {
+				e.preventDefault();
+				var $li = $(this).closest('li');
+				var payload = {'action': 'delete'};
+				payload['subject'] = $li.attr('data-subject');
+				payload['predicate'] = $li.attr('data-predicate');
+				payload['literal'] = $li.attr('data-literal');
+				payload['datatype'] = $li.attr('data-datatype');
+
+				$.ajax({
+					url: 'http://localhost:5000/triple-edit/',
+					method: 'POST',
+					dataType: 'json',
+					contentType: "application/json",
+					data: JSON.stringify(payload),
+					success: function( data ) {
+						console.log( data );
+					}
+				});
+			});
 		};
 
 		var showDetails = function(data) {
@@ -443,7 +473,8 @@
 				var td_data = $('<td/>').css({'border-top':'1px solid black', 'padding-top': '8px'});
 				var lst = $('<ul/>');
 				$.each(row['value'], function(i, val) {
-					var li_val = $('<li/>').text(val);
+					var li_val = $('<li/>', {'data-datatype': val['dt']})
+						.text(val['text']);
 					lst.append(li_val);
 				});
 				td_data.append(lst);

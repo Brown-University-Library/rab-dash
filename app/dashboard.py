@@ -90,7 +90,8 @@ def explore_details(rabid):
 				text = '"{0}"^^<{1}>'.format(pred.text, dt)
 			else:
 				text = '"{0}"'.format(pred.text)
-			simple_data[pred.tag.translate(None, '{}')].append(text)
+				dt = ''
+			simple_data[pred.tag.translate(None, '{}')].append( { 'text':text, 'dt': dt, 'literal': pred.text } )
 
 	data = { 'email': email, 'password': passw, 'query': obj_query }
 	resp = requests.post(query_url, data=data, headers=headers)
@@ -161,6 +162,39 @@ def create_control():
 		return jsonify({ 'uri': new_uri, 'label': control_label })
 	else:
 		return jsonify({})
+
+@app.route('/triple-edit/', methods=['POST'])
+def triple_edit():
+	graph = 'http://vitro.mannlib.cornell.edu/default/vitro-kb-2'
+	uri_base = 'http://vivo.brown.edu/individual/'
+	delete_template = u"DELETEDATA{{GRAPH<{0}>{{{1}}}}}"
+
+	data = request.get_json()
+	uri = data['subject']
+	action = data['action']
+	if action == 'delete':
+		pred = data['predicate']
+		obj = data.get('object')
+		literal = data.get('literal')
+		if obj and dp:
+			return
+		if obj:
+			prm = '<{2}> .'.format(obj)
+		elif literal:
+			dt = data.get('datatype')
+			if dt:
+				prm = '\"{0}\"^^<{1}>'.format(literal, dt)
+			else:
+				prm = '\"{0}\"'.format(literal)
+		triple = '<{0}> <{1}> {2}'.format(uri, pred, prm)
+		update_body = delete_template.format(graph, triple)
+	elif action == 'update':
+		pass
+	payload = {'email': email, 'password': passw, 'update': update_body}
+	header = {	'Content-Type': 'application/x-www-form-urlencoded',
+				'Connection': 'close' }
+	resp = requests.post(update_url, data=payload, headers=header)
+	return jsonify({'status': resp.status_code})
 
 @app.route('/controls/')
 def manage_controls():
