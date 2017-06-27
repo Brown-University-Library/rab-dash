@@ -459,8 +459,17 @@
 				var $li = $(this).closest('li');
 
 				var $form = $('<form/>');
-				var $input = $('<input/>', {'type':'text','class':'triple-edit-literal-input'})
+
+				if ( $li.attr('data-literal').length > 30 ) {
+					var $input = $('<textarea/>', {'rows': '10', 'cols': '50',
+						'class':'triple-edit-literal-input'})
 					.val($li.attr('data-literal'));
+				}
+				else {
+					var $input = $('<input/>', { 'type':'text',
+						'class':'triple-edit-literal-input'})
+					.val($li.attr('data-literal'));;
+				}
 				var $submit = $('<input/>', {'type':'submit'});
 
 				$form.append($input).append($submit);
