@@ -46,6 +46,10 @@ def index():
 	resp = requests.post(query_url, data=data, headers=headers)
 	return '<p>{0}</p>'.format(resp.text.encode('utf-8'))
 
+@app.route('/editor/')
+def editor():
+	return render_template('editor.html')
+
 @app.route('/entities/')
 def entity_manager():
 	return render_template('entity_manager.html')
@@ -102,12 +106,15 @@ def explore_details(rabid):
 		pred = desc[0].tag
 		targets[pred.translate(None, '{}')].append(other.translate(None, '{}'))
 
-	data_targets = [ { 'predicate': key, 'subjects': val } for key, val in targets.items() ]
-	data_pointers = [ { 'predicate': key, 'objects': val } for key, val in pointers.items() ]
+	data_targets = [ { 	'predicate': key,
+						'objects': val } for key, val in targets.items() ]
+	data_pointers = [ { 'predicate': key,
+						'objects': val } for key, val in pointers.items() ]
 	data_properties = [ { 'predicate': key, 'value': val } for key, val in simple_data.items() ]
-	return jsonify({'targets': data_targets,
-					'pointers': data_pointers,
-					'properties': data_properties,
+	return jsonify({'objects': {
+						'in': data_targets,
+						'out': data_pointers },
+					'literals': data_properties,
 					'uri': uri,
 					'rabid': rabid,
 					'label': label })

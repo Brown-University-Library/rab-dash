@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <title>R@B Editor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dash.viewer.css') }}">
+    <script src="{{ url_for('static', filename='lib/jquery/jquery-3.1.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dash.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dash.data.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dash.shell.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dash.viewer.js') }}"></script>
+
+  </head>
+  <body>
+      <button id='test'>Test</button>
+      <script>
+        $( document ).ready(function() {
+          dash.initModule( $('body') );
+        });
+
+        $('#test').click( function(e) {
+          e.preventDefault()
+
+          dash.data.resource.view('weedward');
+        });
+      </script>
+  </body>
+</html>

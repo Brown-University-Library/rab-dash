@@ -1,0 +1,44 @@
+.data-property-table {
+	border-collapse: collapse;
+	border-bottom: 1px solid black;
+	margin-bottom: 10px;
+}
+
+.data-property-row {
+	vertical-align: baseline;
+}
+
+.data-propery-col {
+	border-top : 1px solid black;
+	padding-top: 8px;
+}
+
+.triple-header {
+	display: flex;
+	border-top: 1px solid black;
+	padding: 5px 8px;
+}
+
+.triple-sbj {
+	flex: 1 1;
+	text-align: center;
+}
+
+.triple-prd {
+	flex: 3 3;
+}
+
+.triple-obj {
+	flex: 1 1;
+	text-align: center;
+}
+
+.triple-table td {
+	padding: 5px 5px;
+	border-left: 1px solid black;
+	overflow: auto;
+}
+
+.hidden {
+	visibility: hidden;
+}
