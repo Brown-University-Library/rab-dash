@@ -326,17 +326,3 @@ dash.viewer = (function () {
 // 	var tbl = $('#merge-candidates');
 // 	tbl.find(`tr[data-rabid='${rabid}']`).remove();
 // };
-
-// var resetView = function() {
-// 	is_editing = false;
-
-// 	$('#uri-display').empty();
-// 	$('#label-display').empty();
-// 	$('.pointers').empty();
-// 	$('.properties').empty();
-// 	$('#inspector').attr('data-rabid', '');
-// 	$('#merge-candidates').empty();
-// 	$('.selector-arrow').removeClass('selected editing');
-// 	$('#reset-view').css('visibility', 'hidden');
-// 	$('#merge-into input').css('visibility', 'hidden');
-// };

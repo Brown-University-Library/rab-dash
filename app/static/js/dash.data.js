@@ -13,21 +13,21 @@ dash.data = (function () {
 				list, merge, editLiteral;
 
 
-			list = function( type_param ) {
+			list = function( type_param, callback ) {
 				$.ajax({
 					url: configMap.remote + 'selector',
 					data: { 'type': type_param },
 					success: function( data ) {
-						$( window ).trigger( 'listQueryCompleted', data );
+						callback( JSON.parse(data) );
 					}
 				});
 			};
 
-			view = function( rabid ) {
+			view = function( rabid, callback ) {
 				$.ajax({
 					url: 'http://localhost:5000/explorer/' + rabid,
 					success: function( data ) {
-						$( window ).trigger( 'viewQueryCompleted', data );
+						callback( data );
 					}
 				});
 			}

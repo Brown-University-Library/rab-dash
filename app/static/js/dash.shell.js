@@ -1,24 +1,36 @@
 dash.shell = ( function() {
 	var
-		viewResource,
+		loadResourceToViewer,
+
+		addSelectedListItem, editSelectedListItem,
+		removeSelectedListItem, viewSelectedListItem,
 		initModule;
 
-	viewResource = function ( data ) {
+	loadResourceList = function ( data ) {
+		dash.lister.loadSelectResults( data );
+	};
+
+	loadResourceToViewer = function ( data ) {
 		dash.viewer.resetViewer();
 		dash.viewer.viewResourceDetails( data );
 	};
 
-	initModule = function ( $container ) {
-		dash.viewer.initModule( $container );
+	getResourceList = function ( type_param ) {
+		dash.data.resource.list( type_param, loadResourceList );
 	};
 
-	$( window ).on( 'viewQueryCompleted', function(e, data) {
-		e.preventDefault();
+	viewSelectedListItem = function ( rabid ) {
+		dash.data.resource.view( rabid, loadResourceToViewer );
+	};
 
-		viewResource( data );
-	});
+	initModule = function ( $container ) {
+		dash.viewer.initModule( $container );
+		dash.lister.initModule( $container );
+	};
 
 	return {
+		getResourceList : getResourceList,
+		viewSelectedListItem : viewSelectedListItem,
 		initModule : initModule
 	}
 }());

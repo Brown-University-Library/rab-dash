@@ -1,81 +1,176 @@
-var showSelectList = function(data) {
-	var slc_list = $("#selector-list");
-	slc_list.empty();
+dash.lister = ( function() {
+	var
+		state_map = {
+			editing : null
+		},
 
-	var jdata = JSON.parse(data);
-	$.each(jdata, function(i, row) {
-		var li = $('<li/>', { 'class': 'selector-arrow',
-							'data-rabid': row['rabid']});
-		var label = $('<div/>', {'class': 'item-label'})
-						.text(row['label']);
-		var edit_box = $('<div/>', {'class': 'editing-box'});
-		var edit_btn = $('<button/>', {'class': 'enable-editing',
-										'html': '&plus;'});
-		edit_box.append(edit_btn);
-		li.append(label).append(edit_box);
-		slc_list.append(li);
-	});
+		configMap, jqueryMap,
+		loadSelectResults,
+		onClickViewResource,
+		onClickSelectEditingItem,
+		onClickEnableEditing,
+		buildHtml, initModule;
 
-	$('.item-label').click( function() {
-		var $li = $(this).closest('li');
+	buildHtml = function ( $container ) {
+		var
+			options_list,
 
-		if (is_editing === false) {
-			if ( $li.hasClass('selected') ) {
-				$('.selector-arrow').removeClass('selected');
-			}
-			else {
-				$('.selector-arrow').removeClass('selected');
-				$li.addClass('selected');
-				var rabid = $li.attr('data-rabid');
-				$.ajax({
-					// dataType: "json",
-					url: 'http://localhost:5000/explorer/' + rabid,
-					success: function( data ) {
-						showDetails( data );
-					}
-				});
-			}
+			$lister,
+			$select_form, $select_options,
+			$select_opt, $input,
+			$select_results_list; 
+			
+			options_list = [
+				{'value': 'organizations', 'display': 'Organizations'},
+				{'value': 'venues', 'display': 'Venues'},
+				{'value': 'concepts', 'display': 'Research Areas'}
+			];
+
+			$lister = $('<div/>');
+			$select_form = $('<form/>');
+			$select_options = $('<select/>');
+
+			$.each( options_list, function (i, data_obj) {
+				var $opt;
+
+				$opt = $('<option/>', { 'value': data_obj.value })
+					.text(data_obj.display);
+
+				$select_options.append($opt);
+			});
+
+			$input = $('<input/>', {'type': 'submit'}).text('X');
+			$select_results_list = $('<ul/>', {'class' : 'select-results-list'});
+
+			$select_form.submit( function(e) {
+				e.preventDefault();
+
+				onSubmitGetResourceList( $select_options );
+			});
+
+			$select_form.append($select_options).append($input);
+			$lister.append($select_form).append($select_results_list);
+			$container.append($lister);
+
+			jqueryMap = {
+				$container : $container,
+				$select_options : $select_options,
+				$select_results_list : $select_results_list,
+				$select_results_items : [],
+				$selected_item : null
+			};
+	};
+
+	loadSelectResults = function ( data ) {
+		$.each(data, function(i, row) {
+			var
+				$li, $label, $edit_ctnr, $edit_btn; 
+
+			$li = $('<li/>', { 	'class': 'selector-arrow',
+													'data-rabid': row['rabid']});
+			$label = $('<div/>', {'class': 'item-label'})
+									.text(row['label']);
+			$edit_ctnr = $('<div/>', {'class': 'editing-box'});
+			$edit_btn = $('<button/>', {'class': 'enable-editing',
+																	'html': '&plus;'});
+
+			$label.click( function(e) {
+				e.preventDefault()
+
+				if ( state_map.editing === true ) {
+					onClickSelectEditingItem( $li );
+				}
+				else {
+					onClickViewResource( $li );
+				}
+			});
+
+			$edit_btn.click( function(e) {
+				e.preventDefault();
+
+				state_map.editing = true;
+				onClickEnableEditing( $li );
+			});
+
+			$edit_ctnr.append($edit_btn);
+			$li.append($label).append($edit_ctnr);
+
+			jqueryMap.$select_results_items.push($li);
+			jqueryMap.$select_results_list.append($li);
+		});		
+	};
+
+	onSubmitGetResourceList = function ( $select_options ) {
+		var type_param;
+
+		type_param = $select_options.find('option:selected').attr('value');
+		configMap.app.getResourceList( type_param );
+	};
+
+	onClickViewResource = function ( $li ) {
+		var rabid;
+
+		if ( jqueryMap.$selected_item === null ) {
+			$li.addClass('selected');
+			jqueryMap.$selected_item = $li;
+			rabid = $li.attr('data-rabid');
+			configMap.app.viewSelectedListItem( rabid );			
+		}
+		else if ( $li === jqueryMap.$selected_item ) {
+			$li.removeClass('selected');
+			$jqueryMap.$selected_item = null;
 		}
 		else {
-			if ( $li.hasClass('selected') ) {
-				$li.removeClass('selected');
-				removeMergeCandidate($li.attr('data-rabid'));
-			}
-			else if ( $li.hasClass('editing') ) {
-					return true;
-			}
-			else {
-				$li.addClass('selected');
-				var rabid = $li.attr('data-rabid');
-				$.ajax({
-					// dataType: "json",
-					url: 'http://localhost:5000/explorer/' + rabid,
-					success: function( data ) {
-						addMergeCandidate( data );
-					}
-				});
-			}
+			jqueryMap.$selected_item.removeClass('selected');
 			
+			$li.addClass('selected');
+			jqueryMap.$selected_item = $li;
+			rabid = $li.attr('data-rabid');
+			configMap.app.viewSelectedListItem( rabid );
 		}
-	});
+	};
 
-	$('.enable-editing').click( function(e) {
-		e.preventDefault();
+	onClickSelectEditingItem = function ( $li ) {
+		var rabid;
 
-		is_editing = true;
+		rabid = $li.attr('data-rabid');
+			
+		if ( $li.hasClass('selected') ) {
+			$li.removeClass('selected');
+			configMap.app.removeSelectedListItem( rabid );
+		}
+		else if ( $li.hasClass('editing') ) {
+				return true;
+		}
+		else {
+			$li.addClass('selected');
+			configMap.app.addSelectedListItem( rabid );
+		}
+	};
 
-		$('.selector-arrow').removeClass('selected editing');
+	onClickEnableEditing = function ( $li ) {
+		var rabid;
 
-		$li = $(this).closest('li');
+		jqueryMap.$select_results_items.forEach( function($item) {
+			$item.removeClass('selected editing');
+		});
+
 		$li.removeClass('selected').addClass('editing');
 
-		var rabid = $li.attr('data-rabid');
-		$.ajax({
-			// dataType: "json",
-			url: 'http://localhost:5000/explorer/' + rabid,
-			success: function( data ) {
-				editDetails( data );
-			}
-		});
-	});
-};
+		rabid = $li.attr('data-rabid');
+		configMap.app.editSelectedListItem( rabid );
+	};
+
+	initModule = function( $container ) {
+		configMap = {
+			app : dash.shell
+		};
+
+		buildHtml( $container );
+	};
+
+	return {
+		loadSelectResults: loadSelectResults,
+		initModule : initModule
+	};
+}());
