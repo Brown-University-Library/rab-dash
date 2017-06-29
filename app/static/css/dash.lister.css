@@ -26,3 +26,11 @@
 	z-index: 1;
 
 }
+
+.selected {
+	background: #F39814; color: white;
+}
+
+.editing {
+	background: #ADD8E6; color: white;;
+}

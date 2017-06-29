@@ -38,7 +38,3 @@
 	border-left: 1px solid black;
 	overflow: auto;
 }
-
-.hidden {
-	visibility: hidden;
-}

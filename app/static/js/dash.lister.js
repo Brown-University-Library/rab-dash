@@ -62,6 +62,9 @@ dash.lister = ( function() {
 	};
 
 	loadSelectResults = function ( data ) {
+		jqueryMap.$select_results_list.empty();
+		jqueryMap.$select_results_items = [];
+
 		$.each(data, function(i, row) {
 			var
 				$li, $label, $edit_ctnr, $edit_btn; 
@@ -118,7 +121,8 @@ dash.lister = ( function() {
 		}
 		else if ( $li === jqueryMap.$selected_item ) {
 			$li.removeClass('selected');
-			$jqueryMap.$selected_item = null;
+			jqueryMap.$selected_item = null;
+			configMap.shell.unselectListItem();
 		}
 		else {
 			jqueryMap.$selected_item.removeClass('selected');

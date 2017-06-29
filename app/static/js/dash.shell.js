@@ -7,6 +7,7 @@ dash.shell = ( function() {
 
 		addSelectedListItem, editSelectedListItem,
 		removeSelectedListItem, viewSelectedListItem,
+		unselectListItem,
 		buildHtml, initModule;
 
 	buildHtml = function ( $container ) {
@@ -37,6 +38,10 @@ dash.shell = ( function() {
 		dash.data.resource.view( rabid, loadResourceToViewer );
 	};
 
+	unselectListItem = function () {
+		dash.viewer.resetViewer();
+	}
+
 	initModule = function ( $container ) {
 		buildHtml( $container );
 
@@ -47,6 +52,7 @@ dash.shell = ( function() {
 	return {
 		getResourceList : getResourceList,
 		viewSelectedListItem : viewSelectedListItem,
+		unselectListItem : unselectListItem,
 		initModule : initModule
 	}
 }());
