@@ -26,7 +26,7 @@ dash.lister = ( function() {
 				{'value': 'concepts', 'display': 'Research Areas'}
 			];
 
-			$lister = $('<div/>');
+			$lister = $('<div/>', {'id': 'lister'});
 			$select_form = $('<form/>');
 			$select_options = $('<select/>');
 
@@ -104,7 +104,7 @@ dash.lister = ( function() {
 		var type_param;
 
 		type_param = $select_options.find('option:selected').attr('value');
-		configMap.app.getResourceList( type_param );
+		configMap.shell.getResourceList( type_param );
 	};
 
 	onClickViewResource = function ( $li ) {
@@ -114,7 +114,7 @@ dash.lister = ( function() {
 			$li.addClass('selected');
 			jqueryMap.$selected_item = $li;
 			rabid = $li.attr('data-rabid');
-			configMap.app.viewSelectedListItem( rabid );			
+			configMap.shell.viewSelectedListItem( rabid );			
 		}
 		else if ( $li === jqueryMap.$selected_item ) {
 			$li.removeClass('selected');
@@ -126,7 +126,7 @@ dash.lister = ( function() {
 			$li.addClass('selected');
 			jqueryMap.$selected_item = $li;
 			rabid = $li.attr('data-rabid');
-			configMap.app.viewSelectedListItem( rabid );
+			configMap.shell.viewSelectedListItem( rabid );
 		}
 	};
 
@@ -137,14 +137,14 @@ dash.lister = ( function() {
 			
 		if ( $li.hasClass('selected') ) {
 			$li.removeClass('selected');
-			configMap.app.removeSelectedListItem( rabid );
+			configMap.shell.removeSelectedListItem( rabid );
 		}
 		else if ( $li.hasClass('editing') ) {
 				return true;
 		}
 		else {
 			$li.addClass('selected');
-			configMap.app.addSelectedListItem( rabid );
+			configMap.shell.addSelectedListItem( rabid );
 		}
 	};
 
@@ -158,12 +158,12 @@ dash.lister = ( function() {
 		$li.removeClass('selected').addClass('editing');
 
 		rabid = $li.attr('data-rabid');
-		configMap.app.editSelectedListItem( rabid );
+		configMap.shell.editSelectedListItem( rabid );
 	};
 
 	initModule = function( $container ) {
 		configMap = {
-			app : dash.shell
+			shell : dash.shell
 		};
 
 		buildHtml( $container );

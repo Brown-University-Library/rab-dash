@@ -18,7 +18,7 @@ dash.viewer = (function () {
 			$literals_display, $triples_display,
 			$literals_table;
 
-		$viewer = $('<div/>', { 'class': 'viewer-container' });
+		$viewer = $('<div/>', { 'id': 'viewer' });
 		$edit_btn = $('<button/>', { 'class' : 'edit-resource-btn hidden' })
 									.text('Edit');
 		$reset_btn = $('<button/>', { 'class' : 'reset-viewer-btn hidden' })

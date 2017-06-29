@@ -1,5 +1,28 @@
-.select-list-results {
+.select-results-list {
 	overflow:hidden;
 	overflow-y:scroll;
 	height: 95vh;
+}
+
+.selector-arrow {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+}
+
+.item-label {
+	flex: 9 9;
+	padding: 2px;
+}
+
+.editing-box {
+	flex: 1 1;
+}
+
+.enable-editing {
+	margin: 2px;
+	height: 25px;
+	width: 25px;
+	z-index: 1;
+
 }

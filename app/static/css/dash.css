@@ -1,0 +1,12 @@
+#shell {
+	display: flex;
+}
+
+#lister {
+	flex: 1 1;
+}
+
+
+#viewer {
+	flex: 2 2;
+}

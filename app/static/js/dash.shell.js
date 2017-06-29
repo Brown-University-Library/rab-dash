@@ -1,10 +1,24 @@
 dash.shell = ( function() {
 	var
+
+		jqueryMap,
+
 		loadResourceToViewer,
 
 		addSelectedListItem, editSelectedListItem,
 		removeSelectedListItem, viewSelectedListItem,
-		initModule;
+		buildHtml, initModule;
+
+	buildHtml = function ( $container ) {
+		$shell = $('<div/>', { 'id' : 'shell' });
+
+		$container.append($shell);
+
+		jqueryMap = {
+			$container : $container,
+			$shell : $shell
+		};
+	};
 
 	loadResourceList = function ( data ) {
 		dash.lister.loadSelectResults( data );
@@ -24,8 +38,10 @@ dash.shell = ( function() {
 	};
 
 	initModule = function ( $container ) {
-		dash.viewer.initModule( $container );
-		dash.lister.initModule( $container );
+		buildHtml( $container );
+
+		dash.lister.initModule( jqueryMap.$shell );
+		dash.viewer.initModule( jqueryMap.$shell );
 	};
 
 	return {
