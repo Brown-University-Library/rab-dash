@@ -1,6 +1,6 @@
 dash.viewer = (function () {
 	var
-		jqueryMap,
+		jqueryMap, configMap,
 
 		buildHtml, viewResourceDetails,
 		loadDataProperties, loadObjectProperties,
@@ -12,48 +12,31 @@ dash.viewer = (function () {
 
 	buildHtml = function ( $container ) {
 		var
-			$viewer,
-			$edit_btn, $reset_btn,
+			$viewer, $viewer_ctrls,
 			$label_display, $uri_display,
 			$literals_display, $triples_display,
 			$literals_table;
 
 		$viewer = $('<div/>', { 'id': 'viewer' });
-		$edit_btn = $('<button/>', { 'class' : 'edit-resource-btn hidden' })
-									.text('Edit');
-		$reset_btn = $('<button/>', { 'class' : 'reset-viewer-btn hidden' })
-									.text('Reset');
+		$viewer_ctrls = $('<div/>', {'class' : 'viewer-ctrls'});
 		$label_display = $('<h2/>', { 'class' : 'label-display' });
 		$uri_display = $('<h3/>', { 'class' : 'uri-display' });
 		$literals_display = $('<div/>', { 'class': 'literals-display' });
 		$literals_table = $('<table/>', {'class': 'data-property-table' });
 		$objects_display = $('<div/>', { 'class': 'triples-display' });
 
-		$edit_btn.click( function (e) {
-			e.preventDefault()
-
-			enableEditing();
-		});
-
-		$reset_btn.click( function (e) {
-			e.preventDefault()
-
-			resetViewer();
-		});
-
 		$literals_display.append($literals_table);
 
-		$viewer.append($edit_btn)
-			.append($reset_btn).append($label_display).append($uri_display)
-			.append($literals_display).append($objects_display);
+		$viewer.append($viewer_ctrls).append($label_display)
+			.append($uri_display).append($literals_display)
+			.append($objects_display);
 
 		$container.append($viewer);
 
 		jqueryMap = {
 			$container : $container,
 			$viewer : $viewer,
-			$edit_btn : $edit_btn,
-			$reset_btn : $reset_btn,
+			$viewer_ctrls : $viewer_ctrls,
 			$label_display : $label_display,
 			$uri_display : $uri_display,
 			$literals_display : $literals_display,
@@ -86,7 +69,7 @@ dash.viewer = (function () {
 										'data-datatype': val['dt'],
 										'data-subject': data['uri'],
 										'data-predicate': row['predicate'],
-										'data-literal': val['literal']})
+										'data-literal': val['literal'] })
 							.text(val['text']);
 
 				jqueryMap.$literal_values.push($ltr_val);
@@ -154,9 +137,28 @@ dash.viewer = (function () {
 	};
 
 	viewResourceDetails = function ( data ) {
+		var
+			$unlock_btn, $clear_btn;
+
+		$unlock_btn = $('<button/>', { 'class' : 'viewer-ctrls-btn' })
+									.text('Unlock');
+		$clear_btn = $('<button/>', { 'class' : 'viewer-ctrls-btn' })
+									.text('Clear');
+		$unlock_btn.click( function (e) {
+			e.preventDefault()
+
+			enableEditing();
+		});
+
+		$clear_btn.click( function (e) {
+			e.preventDefault()
+
+			resetViewer();
+		});
+
+		jqueryMap.$viewer_ctrls.append($unlock_btn).append($clear_btn);
+
 		jqueryMap.$literals_table.removeClass('hidden');
-		jqueryMap.$reset_btn.removeClass('hidden');
-		jqueryMap.$edit_btn.removeClass('hidden')
 		jqueryMap.$label_display.text(data['label']);
 		jqueryMap.$uri_display.text(data['uri']);
 		jqueryMap.$viewer.attr('data-rabid', data['rabid']);
@@ -167,8 +169,20 @@ dash.viewer = (function () {
 	};
 
 	enableEditing = function () {
+		var
+			$lock_btn;
+
+		$lock_btn = $('<button/>', { 'class': 'viewer-ctrls-btn'})
+									.text('Lock');
+
+		jqueryMap.$viewer_ctrls.empty();
+		jqueryMap.$viewer_ctrls.append($lock_btn);
+
 		enableLiteralEditing();
 		enableObjectEditing();
+
+		configMap.shell.editViewedResource(
+			jqueryMap.$viewer.attr('data-rabid') );
 	};
 
 	enableLiteralEditing = function() {
@@ -215,13 +229,12 @@ dash.viewer = (function () {
 	}
 
 	resetViewer = function () {
+		jqueryMap.$viewer_ctrls.empty();
 		jqueryMap.$uri_display.empty();
 		jqueryMap.$label_display.empty();
 		jqueryMap.$literals_table.empty().addClass('hidden');
 		jqueryMap.$objects_display.empty();
 		jqueryMap.$viewer.attr('data-rabid', '');
-		jqueryMap.$reset_btn.addClass('hidden');
-		jqueryMap.$edit_btn.addClass('hidden')
 		jqueryMap.$object_rows = [];
 		jqueryMap.$literal_values = [];
 	};
@@ -247,8 +260,8 @@ dash.viewer = (function () {
 		$form = $('<form/>');
 		$submit = $('<input/>', {'type':'submit'});
 
-		if ( $ltr_val.attr('data-literal').length > 30 ) {
-			$input = $('<textarea/>', {	'rows': '10', 'cols': '50',
+		if ( $ltr_val.attr('data-literal').length > 50 ) {
+			$input = $('<textarea/>', {	'rows': '5', 'cols': '50',
 										'class':'triple-edit-literal-input'})
 						.val($ltr_val.attr('data-literal'));
 		}
@@ -283,6 +296,10 @@ dash.viewer = (function () {
 
 	initModule = function ( $container ) {
 		buildHtml( $container );
+
+		configMap = {
+			shell : dash.shell
+		}
 	};
 
 	return {

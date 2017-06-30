@@ -5,10 +5,9 @@ dash.lister = ( function() {
 		},
 
 		configMap, jqueryMap,
-		loadSelectResults,
+		loadSelectResults, editingListItem,
 		onClickViewResource,
 		onClickSelectEditingItem,
-		onClickEnableEditing,
 		buildHtml, initModule;
 
 	buildHtml = function ( $container ) {
@@ -73,9 +72,6 @@ dash.lister = ( function() {
 													'data-rabid': row['rabid']});
 			$label = $('<div/>', {'class': 'item-label'})
 									.text(row['label']);
-			$edit_ctnr = $('<div/>', {'class': 'editing-box'});
-			$edit_btn = $('<button/>', {'class': 'enable-editing',
-																	'html': '&plus;'});
 
 			$label.click( function(e) {
 				e.preventDefault()
@@ -88,19 +84,21 @@ dash.lister = ( function() {
 				}
 			});
 
-			$edit_btn.click( function(e) {
-				e.preventDefault();
-
-				state_map.editing = true;
-				onClickEnableEditing( $li );
-			});
-
-			$edit_ctnr.append($edit_btn);
-			$li.append($label).append($edit_ctnr);
+			$li.append($label);
 
 			jqueryMap.$select_results_items.push($li);
 			jqueryMap.$select_results_list.append($li);
 		});		
+	};
+
+	editingListItem = function ( rabid ) {
+		var $li;
+
+		$li = jqueryMap.$select_results_list
+						.find('li[data-rabid="' + rabid +'"]');
+		$li.removeClass('selected').addClass('editing');
+
+		state_map.editing = true;
 	};
 
 	onSubmitGetResourceList = function ( $select_options ) {
@@ -152,19 +150,6 @@ dash.lister = ( function() {
 		}
 	};
 
-	onClickEnableEditing = function ( $li ) {
-		var rabid;
-
-		jqueryMap.$select_results_items.forEach( function($item) {
-			$item.removeClass('selected editing');
-		});
-
-		$li.removeClass('selected').addClass('editing');
-
-		rabid = $li.attr('data-rabid');
-		configMap.shell.editSelectedListItem( rabid );
-	};
-
 	initModule = function( $container ) {
 		configMap = {
 			shell : dash.shell
@@ -175,6 +160,7 @@ dash.lister = ( function() {
 
 	return {
 		loadSelectResults: loadSelectResults,
+		editingListItem : editingListItem,
 		initModule : initModule
 	};
 }());

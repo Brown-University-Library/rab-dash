@@ -3,7 +3,7 @@ dash.shell = ( function() {
 
 		jqueryMap,
 
-		loadResourceToViewer,
+		loadResourceToViewer, editViewedResource,
 
 		addSelectedListItem, editSelectedListItem,
 		removeSelectedListItem, viewSelectedListItem,
@@ -30,6 +30,10 @@ dash.shell = ( function() {
 		dash.viewer.viewResourceDetails( data );
 	};
 
+	editViewedResource = function ( rabid ) {
+		dash.lister.editingListItem( rabid );
+	};
+
 	getResourceList = function ( type_param ) {
 		dash.data.resource.list( type_param, loadResourceList );
 	};
@@ -53,6 +57,7 @@ dash.shell = ( function() {
 		getResourceList : getResourceList,
 		viewSelectedListItem : viewSelectedListItem,
 		unselectListItem : unselectListItem,
+		editViewedResource : editViewedResource,
 		initModule : initModule
 	}
 }());

@@ -38,3 +38,13 @@
 	border-left: 1px solid black;
 	overflow: auto;
 }
+
+.viewer-ctrls {
+	display: inline-flex;
+	justify-content: flex-end;
+	width: 100%;
+}
+
+.viewer-ctrls-btn {
+	flex: 0 1;
+}
